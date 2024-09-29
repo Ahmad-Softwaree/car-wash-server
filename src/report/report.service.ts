@@ -850,7 +850,7 @@ export class ReportService {
         .select(
           'item.*',
           'item.*',
-          'sell.*',
+          'sell_item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
           'createdUser.username as created_by', // Alias for created_by user
@@ -868,12 +868,11 @@ export class ReportService {
           'updatedUser.id',
         ) // Join for updated_by
 
-        .leftJoin('sell', 'sell_item.sell_id', 'sell.id') // Join sell_item to sum the prices
+        .leftJoin('sell_item', 'sell_item.sell_id', 'sell_item.item_id') // Join sell_item to sum the prices
         .leftJoin('item', 'sell_item.item_id', 'item.id') // Join sell_item to sum the prices
 
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-        .where('sell.deleted', false)
-        .andWhere('item.deleted', false)
+        .where('item.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
 
