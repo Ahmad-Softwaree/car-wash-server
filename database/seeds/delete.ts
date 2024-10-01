@@ -12,7 +12,6 @@ async function truncateAllTables() {
         tablename !== 'knex_migrations' &&
         tablename !== 'knex_migrations_lock'
       ) {
-        console.log(`Truncating table: ${tablename}`);
         await trx.raw(`TRUNCATE TABLE "${tablename}" RESTART IDENTITY CASCADE`);
       }
     }

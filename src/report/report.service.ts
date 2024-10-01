@@ -849,57 +849,53 @@ export class ReportService {
       const items: Item[] = await this.knex<Item>('item')
         .select(
           'item.*',
-          'item.*',
-          'sell_item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
+          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
+          this.knex.raw(
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
+          ),
         )
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
         .leftJoin(
           'user as createdUser',
-          'sell_item.created_by',
+          'item.created_by',
           'createdUser.id',
         ) // Join for created_by
         .leftJoin(
           'user as updatedUser',
-          'sell_item.updated_by',
+          'item.updated_by',
           'updatedUser.id',
         ) // Join for updated_by
-
-        .leftJoin('sell_item', 'sell_item.sell_id', 'sell_item.item_id') // Join sell_item to sum the prices
-        .leftJoin('item', 'sell_item.item_id', 'item.id') // Join sell_item to sum the prices
-
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
         .where('item.deleted', false)
-        .andWhere('sell_item.deleted', false)
-        .andWhere('sell_item.self_deleted', false)
-
         .andWhere(function () {
-          if (from != '' && from && to != '' && to) {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
+        .andWhere(function () {
+          if (from && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            // Set the toDate to the end of that day
-            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
+            this.whereBetween('item.created_at', [fromDate, toDate]);
           }
         })
         .groupBy(
-          'sell_item.sell_id',
-          'sell_item.item_id',
-          'sell_item.id',
-          'sell.id',
+          'item.id', // Group by item.id
           'item_type.name',
           'item_type.id',
-          'item.id',
           'createdUser.username',
           'updatedUser.username',
-        ) // Group by sell_id and item_id to avoid duplicate entries
-        .orderBy('sell_item.id', 'desc')
+        ) // Grouping at the item level
+        .orderBy('item.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
+
       const { hasNextPage } = await generatePaginationInfo<Item>(
-        this.knex<Item>('sell_item'),
+        this.knex<Item>('item'),
         page,
         limit,
         false,
@@ -921,28 +917,34 @@ export class ReportService {
 
   async getKogaAllInformation(from: From, to: To): Promise<any> {
     try {
-      const itemData: any = await this.knex<Item>('sell_item')
+      const itemData: any = await this.knex<Item>('item')
         .select(
-          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
-          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
+          this.knex.raw('COUNT(item.id) as total_count'),
+          this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
-            'SUM(sell_item.item_sell_price * sell_item.quantity) as total_price',
-          ), // Sum of quantities
+            'SUM(COALESCE(sell_item.quantity, 0)) as total_actual_quantity',
+          ),
+          this.knex.raw(
+            'SUM(item.item_purchase_price * item.quantity) as total_item_purchase_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+          ),
         )
-        .leftJoin('item', 'item.id', 'sell_item.item_id') // Join with item table
-
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .where(function () {
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
+            this.whereBetween('item.created_at', [fromDate, toDate]);
           }
         })
-
-        .andWhere('sell_item.deleted', false)
-        .andWhere('sell_item.self_deleted', false)
-        .andWhere('item.deleted', false);
+        .andWhere('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        });
 
       return itemData[0];
     } catch (error) {
@@ -952,17 +954,19 @@ export class ReportService {
 
   async getKogaAllSearch(search: Search): Promise<Item[]> {
     try {
-      const item: Item[] = await this.knex<Item>('sell_item')
+      const item: Item[] = await this.knex<Item>('item')
         .select(
-          'sell_item.*',
           'item.*',
-          'sell.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
+          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
+          this.knex.raw(
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
+          ),
         )
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
@@ -973,11 +977,8 @@ export class ReportService {
           'sell_item.updated_by',
           'updatedUser.id',
         ) // Join for updated_by
-        .leftJoin('sell', 'sell_item.sell_id', 'sell.id') // Join sell_item to sell
-        .leftJoin('item', 'sell_item.item_id', 'item.id') // Join sell_item to item
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-        .where('sell.deleted', false)
-        .andWhere('item.deleted', false)
+        .where('item.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
@@ -991,14 +992,13 @@ export class ReportService {
           }
         })
         .groupBy(
-          'sell_item.id',
-          'item.id',
-          'sell.id',
+          'item.id', // Group by item.id
+          'item_type.name',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
-        ) // Group by necessary fields to avoid aggregation issues
-        .orderBy('sell_item.id', 'desc');
+        ) // Grouping at the item level
+        .orderBy('item.id', 'desc');
 
       return item;
     } catch (error) {
@@ -1008,43 +1008,41 @@ export class ReportService {
 
   async getKogaAllInformationSearch(search: Search): Promise<any> {
     try {
-      const itemData: any = await this.knex<Item>('sell_item')
+      const itemData: any = await this.knex<Item>('item')
         .select(
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
-          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
+          this.knex.raw('COUNT(item.id) as total_count'),
+          this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
-            'SUM(sell_item.item_sell_price * sell_item.quantity) as total_price',
-          ), // Sum of quantities
+            'SUM(COALESCE(sell_item.quantity, 0)) as total_actual_quantity',
+          ),
+          this.knex.raw(
+            'SUM(item.item_purchase_price * item.quantity) as total_item_purchase_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+          ),
         )
-        .leftJoin('item', 'item.id', 'sell_item.item_id') // Join with item table
-        .leftJoin(
-          'user as createdUser',
-          'sell_item.created_by',
-          'createdUser.id',
-        ) // Join for created_by
-        .leftJoin(
-          'user as updatedUser',
-          'sell_item.updated_by',
-          'updatedUser.id',
-        ) // Join for updated_by
-
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .where(function () {
           if (search && search !== '') {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
-                `%${search}%`,
-              ]); // Search by item id
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
-        .groupBy('createdUser.username', 'updatedUser.username') // Group by necessary fields to avoid aggregation issues
-        .andWhere('sell_item.deleted', false)
-        .andWhere('sell_item.self_deleted', false)
-        .andWhere('item.deleted', false);
+        .andWhere('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
+        .groupBy('createdUser.username', 'updatedUser.username'); // Grouping at the item level
+
       return itemData[0];
     } catch (error) {
       throw new Error(error.message);

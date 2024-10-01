@@ -1,42 +1,38 @@
 import { Knex } from 'knex';
-
+import { configDotenv } from 'dotenv';
+configDotenv();
 const development: Knex.Config = {
   client: 'pg',
   connection: {
     host: 'localhost',
     port: 5432,
     user: 'postgres',
-    password: 'aghlqtyo2018#',
+    password: 'postgres',
     database: 'raha_auto_spa_system',
   },
   seeds: {
     directory: './seeds',
   },
-  pool: {
-    min: 2,
-    max: 20, // Increase the maximum number of connections
-  },
+
   migrations: {
     directory: './migrations',
   },
+  debug: true, // Enable debugging
 };
 
 const production: Knex.Config = {
   client: 'pg',
   connection: {
     host: 'localhost',
-    port: Number(process.env.DATABASE_PORT),
-    user: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE_NAME,
+    port: 5432,
+    user: 'postgres',
+    password: 'postgres',
+    database: 'raha_auto_spa_system',
   },
   seeds: {
     directory: './seeds',
   },
-  pool: {
-    min: 2,
-    max: 20, // Increase the maximum number of connections
-  },
+
   migrations: {
     directory: './migrations',
   },

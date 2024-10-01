@@ -1,9 +1,7 @@
 import knex, { Knex } from 'knex';
-import { development, production } from './knexfile';
+import { development } from './knexfile';
 
-const db: Knex = knex(
-  process.env.STAGE == 'development' ? development : production,
-);
+const db: Knex = knex(development);
 
 // updateTypes(db, { output: './database/types.ts' })
 //   .then(() => {

@@ -18,6 +18,8 @@ import { User } from 'database/types';
 import { Knex } from 'knex';
 import ChangeProfileDto from './dto/change-profile.dto';
 import { Id } from 'src/types/global';
+import { configDotenv } from 'dotenv';
+configDotenv();
 @Injectable()
 export class AuthService {
   constructor(

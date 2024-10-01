@@ -1,7 +1,8 @@
 // knex.module.ts
 import { Module, Global } from '@nestjs/common';
 import Knex from 'knex';
-
+import { configDotenv } from 'dotenv';
+configDotenv();
 @Global()
 @Module({
   providers: [

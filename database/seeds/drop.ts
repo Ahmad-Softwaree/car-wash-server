@@ -1,3 +1,4 @@
+import { development } from '../knexfile';
 import db from '../config';
 import { Knex } from 'knex';
 

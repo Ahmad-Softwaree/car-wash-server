@@ -197,7 +197,6 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
         .references('id')
         .inTable('user')
         .onDelete('RESTRICT');
-      table.integer('updated_by').unsigned().notNullable();
       table
         .foreign('updated_by')
         .references('id')
