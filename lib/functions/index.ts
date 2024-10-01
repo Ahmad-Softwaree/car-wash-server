@@ -52,38 +52,19 @@ export const generatePaginationInfo = async <T>(
   return { total, hasNextPage };
 };
 
-export async function checkCityInTables(
-  cityId: number,
-  tables: Knex.QueryBuilder<any, any>[],
-): Promise<boolean> {
-  for (const table of tables) {
-    const result = await table
-      .where('city_id', cityId)
-      .count('id as count')
-      .first();
-
-    if (result && result.count > 0) {
-      return true;
-    }
-  }
-  return false;
-}
 export function formatTimestampToDate(timestamp: number): string {
   const date = new Date(timestamp);
   const formattedDate = date.toLocaleDateString('en-GB');
-
   return formattedDate;
 }
 
 export function timestampToDateString(timestamp: number): string {
   // Create a Date object from the timestamp
   const date = new Date(timestamp);
-
   // Extract year, month, and day from the Date object
   const year = date.getFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Months are zero-based
-  const day = String(date.getUTCDate() + 1).padStart(2, '0');
-
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+  const day = String(date.getDate()).padStart(2, '0');
   // Format the date string as YYYY-MM-DD
   return `${year}-${month}-${day}`;
 }

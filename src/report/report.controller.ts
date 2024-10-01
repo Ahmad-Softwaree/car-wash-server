@@ -24,7 +24,7 @@ import {
   Search,
   To,
 } from 'src/types/global';
-import { Item, Sell, SellItem } from 'database/types';
+import { Item, ItemQuantityHistory, Sell, SellItem } from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)
 @ApiTags('report')
@@ -160,12 +160,13 @@ export class ReportController {
     @Res() res: Response,
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
+    @Query('filter') filter: Filter,
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<SellItem[]>>> {
     try {
       let data: PaginationReturnType<SellItem[]> =
-        await this.reportService.getItem(page, limit, from, to);
+        await this.reportService.getItem(page, limit, filter, from, to);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -183,11 +184,17 @@ export class ReportController {
   async getItemInformation(
     @Req() req: Request,
     @Res() res: Response,
+    @Query('filter') filter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<any>> {
     try {
-      let data: any = await this.reportService.getItemInformation(from, to);
+      let data: any = await this.reportService.getItemInformation(
+        filter,
+        from,
+        to,
+      );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -248,11 +255,12 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('from') from: From,
+    @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
   ): Promise<Response<void>> {
     try {
-      await this.reportService.itemPrint(search, from, to, res);
+      await this.reportService.itemPrint(filter, search, from, to, res);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -273,12 +281,11 @@ export class ReportController {
     @Res() res: Response,
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
-    @Query('from') from: From,
-    @Query('to') to: To,
+    @Query('filter') filter: Filter,
   ): Promise<Response<PaginationReturnType<Item[]>>> {
     try {
       let data: PaginationReturnType<Item[]> =
-        await this.reportService.getKogaAll(page, limit, from, to);
+        await this.reportService.getKogaAll(page, limit, filter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -296,11 +303,10 @@ export class ReportController {
   async getKogaAllInformation(
     @Req() req: Request,
     @Res() res: Response,
-    @Query('from') from: From,
-    @Query('to') to: To,
+    @Query('filter') filter: Filter,
   ): Promise<Response<any>> {
     try {
-      let data: any = await this.reportService.getKogaAllInformation(from, to);
+      let data: any = await this.reportService.getKogaAllInformation(filter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -361,12 +367,249 @@ export class ReportController {
   async kogaAllPrint(
     @Req() req: Request,
     @Res() res: Response,
+    @Query('filter') filter: Filter,
+
+    @Query('search') search: Search,
+  ): Promise<Response<void>> {
+    try {
+      await this.reportService.kogaAllPrint(search, filter, res);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //KOGA NULL REPORT
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Null Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_null')
+  async getKogaNull(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('filter') filter: Filter,
+    @Query('limit') limit: Limit,
+  ): Promise<Response<PaginationReturnType<Item[]>>> {
+    try {
+      let data: PaginationReturnType<Item[]> =
+        await this.reportService.getKogaNull(page, limit, filter);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Null Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_null/information')
+  async getKogaNullInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+  ): Promise<Response<any>> {
+    try {
+      let data: any = await this.reportService.getKogaNullInformation(filter);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+  //test
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Null Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_null_search')
+  async getKogaNullSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<Item[]>> {
+    try {
+      let data: Item[] = await this.reportService.getKogaNullSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Null Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_null_search/information')
+  async getKogaNullInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<any>> {
+    try {
+      let data: any =
+        await this.reportService.getKogaNullInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Null Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_null/print')
+  async kogaNullPrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+
+    @Query('search') search: Search,
+  ): Promise<Response<void>> {
+    try {
+      await this.reportService.kogaNullPrint(search, filter, res);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //KOGA MOVEMENT REPORT
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Movement Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_movement')
+  async getKogaMovement(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('limit') limit: Limit,
+    @Query('filter') filter: Filter,
+
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<PaginationReturnType<ItemQuantityHistory[]>>> {
+    try {
+      let data: PaginationReturnType<ItemQuantityHistory[]> =
+        await this.reportService.getKogaMovement(page, limit, filter, from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Movement Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_movement/information')
+  async getKogaMovementInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<any>> {
+    try {
+      let data: any = await this.reportService.getKogaMovementInformation(
+        filter,
+        from,
+        to,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+  //test
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Movement Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_movement_search')
+  async getKogaMovementSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<ItemQuantityHistory[]>> {
+    try {
+      let data: ItemQuantityHistory[] =
+        await this.reportService.getKogaMovementSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Movement Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_movement_search/information')
+  async getKogaMovementInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<any>> {
+    try {
+      let data: any =
+        await this.reportService.getKogaMovementInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Movement Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_movement/print')
+  async kogaMovementPrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
   ): Promise<Response<void>> {
     try {
-      await this.reportService.kogaAllPrint(search, from, to, res);
+      await this.reportService.kogaMovementPrint(filter, search, from, to, res);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

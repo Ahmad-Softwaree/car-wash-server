@@ -235,6 +235,7 @@ export class ItemController {
         id,
         type,
         body,
+        req['user'].id,
       );
       return res.status(HttpStatus.OK).json(item);
     } catch (error) {

@@ -247,3 +247,14 @@ export type BackupWithUser = {
   created_at: Date | null;
   updated_at: Date | null;
 };
+
+export type ItemQuantityHistory = {
+  id: number;
+  created_by: number;
+  item_id: number;
+  quantity: number;
+  item_purchase_price: number;
+  item_sell_price: number;
+  created_at: Date;
+  updated_at: Date;
+};

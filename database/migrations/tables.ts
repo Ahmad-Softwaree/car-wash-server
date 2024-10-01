@@ -197,6 +197,8 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
         .references('id')
         .inTable('user')
         .onDelete('RESTRICT');
+      table.integer('updated_by').unsigned();
+
       table
         .foreign('updated_by')
         .references('id')
@@ -218,6 +220,26 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
       table.integer('item_sell_price').notNullable().defaultTo(0);
       table.boolean('deleted').defaultTo(false);
       table.boolean('self_deleted').defaultTo(false);
+      table.timestamps({ defaultToNow: true });
+    })
+    .createTable('item_quantity_history', function (table) {
+      table.increments('id').primary();
+      table.integer('created_by').unsigned().notNullable();
+      table
+        .foreign('created_by')
+        .references('id')
+        .inTable('user')
+        .onDelete('RESTRICT');
+      table.integer('item_id').unsigned().notNullable();
+      table
+        .foreign('item_id')
+        .references('id')
+        .inTable('item')
+        .onDelete('RESTRICT');
+      table.integer('quantity').notNullable().defaultTo(0);
+      table.integer('item_purchase_price').notNullable().defaultTo(0);
+      table.boolean('deleted').defaultTo(false);
+      table.integer('item_sell_price').notNullable().defaultTo(0);
       table.timestamps({ defaultToNow: true });
     })
     .createTable('customer', function (table) {

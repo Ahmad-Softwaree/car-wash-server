@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { Knex } from 'knex';
 import {
@@ -15,7 +20,7 @@ import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
 import { CreateItemDto } from './dto/create-item-dto';
 import { UpdateItemDto } from './dto/update-item-dto';
 import { ItemWithType } from 'src/types/item';
-import { Item } from 'database/types';
+import { Item, ItemQuantityHistory } from 'database/types';
 import { ChangeItemQuantityDto } from './dto/change-item-quantity-dto';
 
 @Injectable()
@@ -351,6 +356,15 @@ export class ItemService {
 
         .insert({ created_by: user_id, ...data })
         .returning('*');
+      //save the history
+
+      await this.knex<ItemQuantityHistory>('item_quantity_history').insert({
+        item_id: item[0].id,
+        created_by: user_id,
+        quantity: data.quantity,
+        item_purchase_price: item[0].item_purchase_price,
+        item_sell_price: item[0].item_sell_price,
+      });
       return item[0];
     } catch (error) {
       throw new Error(error.message);
@@ -378,17 +392,28 @@ export class ItemService {
     id: Id,
     type: 'increase' | 'decrease',
     data: ChangeItemQuantityDto,
+    user_id: number,
   ): Promise<ItemWithType> {
     try {
-      let item: Pick<Item, 'quantity' | 'id'> = await this.knex<Item>('item')
-        .select('quantity', 'id')
+      let item: Pick<
+        Item,
+        'quantity' | 'id' | 'item_purchase_price' | 'item_sell_price'
+      > = await this.knex<Item>('item')
+        .select('quantity', 'id', 'item_purchase_price', 'item_sell_price')
         .where('id', id)
         .first();
-      const result: Item[] = await this.knex<Item>('item')
 
+      if (type == 'decrease') {
+        let itemQuantity = await this.getItemQuantity(id);
+        if (itemQuantity.actual_quantity - Number(data.quantity) < 0) {
+          throw new BadRequestException(
+            'ناتوانی ئەم عەدەدە کەم کەیتەوە ئەبێتە سالب',
+          );
+        }
+      }
+      const result: Item[] = await this.knex<Item>('item')
         .where('item.id', id)
         .andWhere('item.deleted', false)
-
         .update({
           quantity:
             type == 'increase'
@@ -400,6 +425,17 @@ export class ItemService {
       if (result.length === 0) {
         throw new NotFoundException(`Item with ID ${id} not found`);
       }
+
+      //save the history
+
+      await this.knex<ItemQuantityHistory>('item_quantity_history').insert({
+        item_id: id,
+        created_by: user_id,
+        quantity: type == 'increase' ? data.quantity : -data.quantity,
+        item_purchase_price: item.item_purchase_price,
+        item_sell_price: item.item_sell_price,
+      });
+
       let last = await this.findOne(id);
 
       return last;

@@ -7,6 +7,7 @@ import {
   Expense,
   ExpenseType,
   Item,
+  ItemQuantityHistory,
   ItemType,
   Reservation,
   Sell,
@@ -48,7 +49,9 @@ export type DataTypes =
   | Sell[]
   | SellItem[]
   | Reservation[]
-  | Backup[];
+  | Backup[]
+  | ItemQuantityHistory[];
+
 export type Tables =
   | User
   | Expense

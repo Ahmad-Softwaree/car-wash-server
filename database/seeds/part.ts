@@ -40,7 +40,11 @@ export const parts = [
     created_at: new Date(),
   },
   {
-    name: 'کۆگا فرۆشتن',
+    name: 'ڕاپۆرتی کۆگا',
+    created_at: new Date(),
+  },
+  {
+    name: 'ڕاپۆرتی قازانج',
     created_at: new Date(),
   },
   {
