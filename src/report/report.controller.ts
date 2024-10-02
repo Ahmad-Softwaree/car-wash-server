@@ -24,7 +24,13 @@ import {
   Search,
   To,
 } from 'src/types/global';
-import { Item, ItemQuantityHistory, Sell, SellItem } from 'database/types';
+import {
+  Expense,
+  Item,
+  ItemQuantityHistory,
+  Sell,
+  SellItem,
+} from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)
 @ApiTags('report')
@@ -610,6 +616,397 @@ export class ReportController {
   ): Promise<Response<void>> {
     try {
       await this.reportService.kogaMovementPrint(filter, search, from, to, res);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //BILL PROFIT REPORT
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All BillProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'BillProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('bill_profit')
+  async getBillProfit(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('limit') limit: Limit,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<PaginationReturnType<Sell[]>>> {
+    try {
+      let data: PaginationReturnType<Sell[]> =
+        await this.reportService.getBillProfit(page, limit, from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All BillProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'BillProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('bill_profit/information')
+  async getBillProfitInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<any>> {
+    try {
+      let data: any = await this.reportService.getBillProfitInformation(
+        from,
+        to,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All BillProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'BillProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('bill_profit_search')
+  async getBillProfitSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<Sell[]>> {
+    try {
+      let data: Sell[] = await this.reportService.getBillProfitSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All BillProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'BillProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('bill_profit_search/information')
+  async getBillProfitInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<any>> {
+    try {
+      let data: any =
+        await this.reportService.getBillProfitInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All BillProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'BillProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('bill_profit/print')
+  async BillProfitPrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('search') search: Search,
+  ): Promise<Response<void>> {
+    try {
+      await this.reportService.billProfitPrint(search, from, to, res);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //ITEM_PROFIT
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All ItemProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'ItemProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('item_profit')
+  async getItemProfit(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('limit') limit: Limit,
+    @Query('filter') filter: Filter,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<PaginationReturnType<SellItem[]>>> {
+    try {
+      let data: PaginationReturnType<SellItem[]> =
+        await this.reportService.getItemProfit(page, limit, filter, from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All ItemProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'ItemProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('item_profit/information')
+  async getItemProfitInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<any>> {
+    try {
+      let data: any = await this.reportService.getItemProfitInformation(
+        filter,
+        from,
+        to,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All ItemProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'ItemProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('item_profit_search')
+  async getItemProfitSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<SellItem[]>> {
+    try {
+      let data: SellItem[] =
+        await this.reportService.getItemProfitSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All ItemProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'ItemProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('item_profit_search/information')
+  async getItemProfitInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<any>> {
+    try {
+      let data: any =
+        await this.reportService.getItemProfitInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All ItemProfit' })
+  @ApiResponse({
+    status: 200,
+    description: 'ItemProfit retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('item_profit/print')
+  async itemProfitPrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('filter') filter: Filter,
+    @Query('to') to: To,
+    @Query('search') search: Search,
+  ): Promise<Response<void>> {
+    try {
+      await this.reportService.itemProfitPrint(filter, search, from, to, res);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //EXPENSE REPORT
+
+  @PartName([ENUMs.EXPENSE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Expense' })
+  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Expense not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('expense')
+  async getExpense(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('limit') limit: Limit,
+    @Query('filter') filter: Filter,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<PaginationReturnType<Expense[]>>> {
+    try {
+      let data: PaginationReturnType<Expense[]> =
+        await this.reportService.getExpense(page, limit, filter, from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.EXPENSE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Expense' })
+  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Expense not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('expense/information')
+  async getExpenseInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<any>> {
+    try {
+      let data: any = await this.reportService.getExpenseInformation(
+        filter,
+        from,
+        to,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.EXPENSE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Expense' })
+  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Expense not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('expense_search')
+  async getExpenseSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<Expense[]>> {
+    try {
+      let data: Expense[] = await this.reportService.getExpenseSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.EXPENSE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Expense' })
+  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Expense not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('expense_search/information')
+  async getExpenseInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<any>> {
+    try {
+      let data: any =
+        await this.reportService.getExpenseInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.EXPENSE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Expense' })
+  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Expense not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('expense/print')
+  async expensePrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('filter') filter: Filter,
+    @Query('to') to: To,
+    @Query('search') search: Search,
+  ): Promise<Response<void>> {
+    try {
+      await this.reportService.expensePrint(filter, search, from, to, res);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -48,6 +48,10 @@ export const parts = [
     created_at: new Date(),
   },
   {
+    name: 'ڕاپۆرتی خەرجی',
+    created_at: new Date(),
+  },
+  {
     name: 'ڕۆڵەکان',
     created_at: new Date(),
   },
