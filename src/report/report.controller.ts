@@ -16,6 +16,7 @@ import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
 import { Request, Response } from 'express';
 import {
+  CaseReport,
   Filter,
   From,
   Limit,
@@ -137,7 +138,7 @@ export class ReportController {
   @ApiResponse({ status: 404, description: 'Sell not found.' })
   @HttpCode(HttpStatus.OK)
   @Get('sell/print')
-  async SellPrint(
+  async sellPrint(
     @Req() req: Request,
     @Res() res: Response,
     @Query('from') from: From,
@@ -1007,6 +1008,118 @@ export class ReportController {
   ): Promise<Response<void>> {
     try {
       await this.reportService.expensePrint(filter, search, from, to, res);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //CASE REPORT
+  @PartName([ENUMs.CASE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Case' })
+  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Case not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('case')
+  async getCase(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('limit') limit: Limit,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<PaginationReturnType<CaseReport[]>>> {
+    try {
+      let data: PaginationReturnType<CaseReport[]> =
+        await this.reportService.getCase(page, limit, from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.CASE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Case' })
+  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Case not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('case/information')
+  async getCaseInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<any>> {
+    try {
+      let data: any = await this.reportService.getCaseInformation(from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.CASE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Case' })
+  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Case not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('case_search')
+  async getCaseSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<CaseReport[]>> {
+    try {
+      let data: CaseReport[] = await this.reportService.getCaseSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.CASE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Case' })
+  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Case not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('case_search/information')
+  async getCaseInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<any>> {
+    try {
+      let data: any = await this.reportService.getCaseInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.CASE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Case' })
+  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Case not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('case/print')
+  async casePrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('search') search: Search,
+  ): Promise<Response<void>> {
+    try {
+      await this.reportService.sellPrint(search, from, to, res);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

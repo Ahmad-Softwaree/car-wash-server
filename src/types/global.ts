@@ -50,7 +50,8 @@ export type DataTypes =
   | SellItem[]
   | Reservation[]
   | Backup[]
-  | ItemQuantityHistory[];
+  | ItemQuantityHistory[]
+  | CaseReport[];
 
 export type Tables =
   | User
@@ -76,3 +77,10 @@ export type PaginationObject<T extends DataTypes> = {
 };
 
 export type PaginationReturnType<T extends DataTypes> = PaginationObject<T>;
+
+export type CaseReport = {
+  id: number;
+  created_by: number;
+  sold: number | string;
+  sold_price: number | string;
+};
