@@ -1,4 +1,6 @@
 import { Knex } from 'knex';
+import { puppeteerConfig } from 'lib/static/pdf';
+import puppeteer, { Browser, Page as PuppeteerPage } from 'puppeteer';
 import { Limit, Page } from 'src/types/global';
 
 export const generatePaginationInfo = async <T>(
@@ -68,3 +70,39 @@ export function timestampToDateString(timestamp: number): string {
   // Format the date string as YYYY-MM-DD
   return `${year}-${month}-${day}`;
 }
+export function formatDateToDDMMYY(dateString: string): string {
+  const date = new Date(dateString);
+
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const year = String(date.getUTCFullYear());
+  return `${day}/${month}/${year}`;
+}
+
+export function formatMoney(value: any): string {
+  if (isNaN(value) || !value) {
+    return '0';
+  }
+  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+export const generatePuppeteer = async ({
+  pageViewW = 1080,
+  pageViewH = 1024,
+}: {
+  pageViewW?: number;
+  pageViewH?: number;
+}): Promise<{
+  browser: Browser;
+  page: PuppeteerPage;
+}> => {
+  try {
+    const browser: Browser = await puppeteer.launch(puppeteerConfig);
+    const page: PuppeteerPage = await browser.newPage();
+    await page.setViewport({ width: pageViewW, height: pageViewH });
+
+    return { browser, page };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};

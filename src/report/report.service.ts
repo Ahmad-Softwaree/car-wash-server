@@ -5,12 +5,16 @@ import {
   ItemQuantityHistory,
   Sell,
   SellItem,
+  User,
 } from 'database/types';
 import { Knex } from 'knex';
 
 import {
+  formatDateToDDMMYY,
+  formatMoney,
   formatTimestampToDate,
   generatePaginationInfo,
+  generatePuppeteer,
   timestampToDateString,
 } from 'lib/functions';
 import {
@@ -27,6 +31,7 @@ import {
 } from 'src/types/global';
 import puppeteer from 'puppeteer';
 import { Response } from 'express';
+import { pdfBufferObject, pdfStyle } from 'lib/static/pdf';
 @Injectable()
 export class ReportService {
   constructor(@Inject('KnexConnection') private readonly knex: Knex) {}
@@ -267,99 +272,23 @@ export class ReportService {
     search: Search,
     from: From,
     to: To,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
       let data = await this.sellPrintData(search, from, to);
-      const browser = await puppeteer.launch({});
-      const page = await browser.newPage();
 
-      await page.setViewport({ width: 1080, height: 1024 });
-
+      let { browser, page } = await generatePuppeteer({});
       const htmlContent = `
       <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Raha Sell</title>
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        font-family: Calibri;
-      }
-
-      .info {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        width: 100%;
-      }
-      .info_black {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        width: 100%;
-        background-color: black;
-        color: white;
-        padding-inline: 2rem;
-      }
-      .infoRight {
-        text-align: right;
-        font-size: 20px;
-      }
-
-      .infoLeft {
-        text-align: right;
-        font-size: 20px;
-      }
-
-      .username {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        font-size: 30px;
-        margin-top: 30px;
-        line-height: 1.3;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-
-      th,
-      td {
-        border: 1px solid black;
-        text-align: center;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        padding-left: 5px;
-        padding-right: 5px;
-        white-space: pre-wrap;
-      }
-
-      th {
-        color: white;
-
-        background-color: black;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 20px;
-        padding-bottom: 20px;
-      }
-    </style>
+ ${pdfStyle}
   </head>
 
   <body>
@@ -371,8 +300,8 @@ export class ReportService {
         <p>کۆی پسوڵە ${data.info.sellData.sell_count}</p>
       </div>
       <div class="infoRight">
-        <p>کۆی داشکاندنی پسوڵە ${data.info.discountData.total_discount}</p>
-        <p>کۆی دوای داشکاندن ${data.info.sellData.total_item_sell_price - data.info.discountData.total_discount}</p>
+        <p>کۆی داشکاندنی پسوڵە ${data.info.discountData}</p>
+        <p>کۆی دوای داشکاندن ${data.info.sellData.total_item_sell_price - data.info.discountData}</p>
       </div>
     </div>
     <table>
@@ -388,28 +317,36 @@ export class ReportService {
       <tbody id="table-body">
       ${data.sell.map((val: SellReportData, _index: number) => {
         return `
-           <td>${val.total_item_sell_price - val.discount}</td>
-                <td>${val.discount}</td>
-                <td>${val.total_item_sell_price}</td>
-                <td>${val.created_at}</td>
+       <tr>
+           <td>${formatMoney(val.total_item_sell_price - val.discount)}</td>
+                <td>${formatMoney(val.discount)}</td>
+                <td>${formatMoney(val.total_item_sell_price)}</td>
+                <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
                 <td>${val.id}</td>
+       </tr>
           `;
       })}
       </tbody>
     </table>
-
+  <div class="info_black">
+      <div class="infoLeft">
+        <p>بەرواری پرنت ${timestampToDateString(Date.now())}</p>
+      </div>
+      <div class="infoRight">
+        <p>${user.username} بکەر</p>
+      </div>
+    </div>
   </body>
 </html>
 
       `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }

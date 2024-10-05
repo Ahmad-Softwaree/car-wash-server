@@ -87,7 +87,7 @@ export type CaseReport = {
 
 export type SellReportInfo = {
   sellData: { sell_count: number; total_item_sell_price: number };
-  discountData: { total_discount: number };
+  discountData: number;
 };
 
 export type SellReportData = Sell & { total_item_sell_price: number };

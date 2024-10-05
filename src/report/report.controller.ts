@@ -144,9 +144,21 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.sellPrint(search, from, to, res);
+      let pdf = await this.reportService.sellPrint(
+        search,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1119,7 +1131,7 @@ export class ReportController {
     @Query('search') search: Search,
   ): Promise<Response<void>> {
     try {
-      await this.reportService.sellPrint(search, from, to, res);
+      await this.reportService.casePrint(search, from, to, res);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
