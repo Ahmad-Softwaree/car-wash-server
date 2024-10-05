@@ -795,11 +795,29 @@ export class SellService {
   }
   async update(id: Id, body: UpdateSellDto, user_id: number): Promise<Sell> {
     try {
+      let prevSellPrice: { total_sell_price: number | string } =
+        await this.knex<SellItem>('sell_item')
+          .where('sell_id', id)
+          .sum({
+            total_sell_price: this.knex.raw('item_sell_price * quantity'),
+          })
+          .first();
+
+      if (
+        Number(body.discount) > Number(prevSellPrice.total_sell_price) ||
+        Number(body.discount) < 0
+      ) {
+        throw new BadRequestException('تکایە بڕێ داشکاندنی ڕاست و دروست بنێرە');
+      }
       const sell: Sell[] = await this.knex<Sell>('sell')
         .where('id', id)
         .andWhere('deleted', false)
         .update({ discount: Number(body.discount), updated_by: user_id })
         .returning('*');
+
+      if (!sell) {
+        throw new BadRequestException(`تکایە سەرەتا وەصڵ دروست بکە`);
+      }
 
       return sell[0];
     } catch (error) {

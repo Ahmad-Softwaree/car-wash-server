@@ -6,7 +6,6 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  IsUrl,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -49,7 +48,7 @@ export class UpdateItemDto {
     description: 'The URL of the item image',
     required: false,
   })
-  @IsUrl({}, { message: 'بەستەری وێنە دەبێت بەستەرێکی دروست بێت' })
+  @IsString({ message: 'بەستەری وێنە دەبێت بەستەرێکی دروست بێت' })
   @IsOptional()
   image_url?: string;
 
