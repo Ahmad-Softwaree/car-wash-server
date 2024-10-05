@@ -7,14 +7,7 @@ import {
   SellItem,
 } from 'database/types';
 import { Knex } from 'knex';
-const DOWN_PROXY = /http:\/\/download.redis.io\/(.*).tar.gz/;
 
-const CHROME_PATH =
-  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe';
-const CHROME_HOST = 'localhost';
-const CHROME_PORT = 9222;
-const CHROME_WIDTH = 1920;
-const CHROME_HEIGHT = 1080;
 import {
   formatTimestampToDate,
   generatePaginationInfo,
@@ -29,6 +22,8 @@ import {
   To,
   Filter,
   CaseReport,
+  SellReportInfo,
+  SellReportData,
 } from 'src/types/global';
 import puppeteer from 'puppeteer';
 import { Response } from 'express';
@@ -90,7 +85,7 @@ export class ReportService {
     }
   }
 
-  async getSellInformation(from: From, to: To): Promise<any> {
+  async getSellInformation(from: From, to: To): Promise<SellReportInfo> {
     try {
       let discountData: any = await this.knex<Sell>('sell')
         .select(this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'))
@@ -165,7 +160,7 @@ export class ReportService {
     }
   }
 
-  async getSellInformationSearch(search: Search): Promise<any> {
+  async getSellInformationSearch(search: Search): Promise<SellReportInfo> {
     try {
       let discountData: any = await this.knex<Sell>('sell')
         .select(
@@ -218,9 +213,16 @@ export class ReportService {
     }
   }
 
-  async sellPrintData(search: Search, from: From, to: To): Promise<any> {
+  async sellPrintData(
+    search: Search,
+    from: From,
+    to: To,
+  ): Promise<{
+    sell: SellReportData[];
+    info: SellReportInfo;
+  }> {
     try {
-      const sell: Sell[] = await this.knex<Sell>('sell')
+      const sell: SellReportData[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
           'createdUser.username as created_by', // Alias for created_by user
@@ -269,148 +271,137 @@ export class ReportService {
   ): Promise<void> {
     try {
       let data = await this.sellPrintData(search, from, to);
-      const browser = await puppeteer.launch({
-        // executablePath:
-        //   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-        dumpio: true,
-      });
+      const browser = await puppeteer.launch({});
       const page = await browser.newPage();
 
       await page.setViewport({ width: 1080, height: 1024 });
 
       const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display:flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            font-family:Calibri;
+      <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raha Sell</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        font-family: Calibri;
+      }
 
-          }
-          .info {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .infoRight {
-            text-align: right;
-          
-          }
-          .infoLeft {
-            text-align: right;
-          }
-          .username {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            margin-top: 30px;
-            line-height: 1.3;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            
-          }
-          th, td {
-            border: 1px solid black;
-    
-            text-align: center;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-left: 5px;
-            padding-right: 5px;
-            white-space: pre-wrap;
-            
-          }
-          th {
-            background-color: black;
-            padding-left: 5px;
-            padding-right: 5px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-          }
-        
-        </style>
-      </head>
-      <body>
-       
-     
+      .info {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .info_black {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        background-color: black;
+        color: white;
+        padding-inline: 2rem;
+      }
+      .infoRight {
+        text-align: right;
+        font-size: 20px;
+      }
 
+      .infoLeft {
+        text-align: right;
+        font-size: 20px;
+      }
 
+      .username {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 30px;
+        margin-top: 30px;
+        line-height: 1.3;
+      }
 
-            <p class="username">ڕاپۆرتی فرۆشتن
-            </p>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
 
-            <div class="info">
-            <div class="infoLeft">
-                <p>${formatTimestampToDate(
-                  parseInt(data.sell.created_at),
-                )} بەروار</p>
-                <p>${data.sell.id} ر.وصل</p>
-            </div>
-            <div class="infoRight">
-             
-            </div>
-          </div>
-       
+      th,
+      td {
+        border: 1px solid black;
+        text-align: center;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding-left: 5px;
+        padding-right: 5px;
+        white-space: pre-wrap;
+      }
 
+      th {
+        color: white;
 
+        background-color: black;
+        padding-left: 5px;
+        padding-right: 5px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+    </style>
+  </head>
 
-     
+  <body>
+    <p class="username">ڕاپۆرتی لیستی پسوڵەکان</p>
+
+    <div class="info_black">
+      <div class="infoLeft">
+        <p>کۆی گشتی پسوڵە ${data.info.sellData.total_item_sell_price}</p>
+        <p>کۆی پسوڵە ${data.info.sellData.sell_count}</p>
       </div>
-        <table>
-          <thead>
-            <tr>
-              <th>چاککار</th>
-              <th>داغڵکار</th>
-              <th>نرخ دوای داشکان</th>
-              <th>داشکاندن</th>
-              <th>کۆی گشتی</th>
-              <th>بەروار  </th>
-              <th>ژ.وەصڵ</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.sell
-              .map(
-                (one_sell, index) => `
-              <tr>
-                <td>${one_sell.updated_by}</td>
-                <td>${one_sell.created_by}</td>
-                <td>${one_sell.total_item_sell_price - one_sell.discount}</td>
-                <td>${one_sell.discount}</td>
-                <td>${one_sell.total_item_sell_price}</td>
-                <td>${one_sell.created_at}</td>
-                <td>${one_sell.id}</td>
-                <td>${index + 1}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+      <div class="infoRight">
+        <p>کۆی داشکاندنی پسوڵە ${data.info.discountData.total_discount}</p>
+        <p>کۆی دوای داشکاندن ${data.info.sellData.total_item_sell_price - data.info.discountData.total_discount}</p>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>نرخی دوای داشکاندن</th>
+          <th>داشکاندن</th>
+          <th>کۆی گشتی</th>
+          <th>بەروار</th>
+          <th>ژ.وەصڵ</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      ${data.sell.map((val: SellReportData, _index: number) => {
+        return `
+           <td>${val.total_item_sell_price - val.discount}</td>
+                <td>${val.discount}</td>
+                <td>${val.total_item_sell_price}</td>
+                <td>${val.created_at}</td>
+                <td>${val.id}</td>
+          `;
+      })}
+      </tbody>
+    </table>
+
+  </body>
+</html>
+
+      `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
       const pdfBuffer = await page.pdf({
@@ -936,7 +927,13 @@ export class ReportService {
     }
   }
 
-  async getKogaAllInformation(filter: Filter): Promise<any> {
+  async getKogaAllInformation(filter: Filter): Promise<{
+    total_count: number;
+    total_item_quantity: number;
+    total_actual_quantity: number;
+    total_item_purchase_price: number;
+    total_actual_quantity_price: number;
+  }> {
     try {
       const itemData: any = await this.knex<Item>('item')
         .select(
@@ -1023,9 +1020,21 @@ export class ReportService {
     }
   }
 
-  async getKogaAllInformationSearch(search: Search): Promise<any> {
+  async getKogaAllInformationSearch(search: Search): Promise<{
+    total_count: number;
+    total_item_quantity: number;
+    total_actual_quantity: number;
+    total_item_purchase_price: number;
+    total_actual_quantity_price: number;
+  }> {
     try {
-      const itemData: any = await this.knex<Item>('item')
+      const itemData: {
+        total_count: number;
+        total_item_quantity: number;
+        total_actual_quantity: number;
+        total_item_purchase_price: number;
+        total_actual_quantity_price: number;
+      } = await this.knex<Item>('item')
         .select(
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
@@ -1069,7 +1078,19 @@ export class ReportService {
     }
   }
 
-  async kogaAllPrintData(search: Search, filter: Filter): Promise<any> {
+  async kogaAllPrintData(
+    search: Search,
+    filter: Filter,
+  ): Promise<{
+    item: Item[];
+    info: {
+      total_count: number;
+      total_item_quantity: number;
+      total_actual_quantity: number;
+      total_item_purchase_price: number;
+      total_actual_quantity_price: number;
+    };
+  }> {
     try {
       const item: Item[] = await this.knex<Item>('item')
         .select(
@@ -1120,147 +1141,143 @@ export class ReportService {
   ): Promise<void> {
     try {
       let data = await this.kogaAllPrintData(search, filter);
-      const browser = await puppeteer.launch({
-        executablePath:
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-      });
+      const browser = await puppeteer.launch({});
       const page = await browser.newPage();
 
       await page.setViewport({ width: 1080, height: 1024 });
 
       const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display:flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            font-family:Calibri;
+      <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raha Koga Report</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        font-family: Calibri;
+      }
 
-          }
-          .info {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .infoRight {
-            text-align: right;
-          
-          }
-          .infoLeft {
-            text-align: right;
-          }
-          .username {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            margin-top: 30px;
-            line-height: 1.3;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            
-          }
-          th, td {
-            border: 1px solid black;
-    
-            text-align: center;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-left: 5px;
-            padding-right: 5px;
-            white-space: pre-wrap;
-            
-          }
-          th {
-            background-color: black;
-            padding-left: 5px;
-            padding-right: 5px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-          }
-        
-        </style>
-      </head>
-      <body>
-       
-     
+      .info {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .info_black {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        background-color: black;
+        color: white;
+        padding-inline: 2rem;
+      }
+      .infoRight {
+        text-align: right;
+        font-size: 20px;
+      }
 
+      .infoLeft {
+        text-align: right;
+        font-size: 20px;
+      }
 
+      .username {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 30px;
+        margin-top: 30px;
+        line-height: 1.3;
+      }
 
-            <p class="username">ڕاپۆرتی فرۆشتن
-            </p>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
 
-            <div class="info">
-            <div class="infoLeft">
-                <p>${formatTimestampToDate(
-                  parseInt(data.item.created_at),
-                )} بەروار</p>
-                <p>${data.item.id} ر.وصل</p>
-            </div>
-            <div class="infoRight">
-             
-            </div>
-          </div>
-       
+      th,
+      td {
+        border: 1px solid black;
+        text-align: center;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding-left: 5px;
+        padding-right: 5px;
+        white-space: pre-wrap;
+      }
 
+      th {
+        color: white;
 
+        background-color: black;
+        padding-left: 5px;
+        padding-right: 5px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+    </style>
+  </head>
 
-     
+  <body>
+    <p class="username">ڕاپۆرتی لیستی پسوڵەکان</p>
+
+    <div class="info_black">
+      <div class="infoLeft">
+        <p>کۆی گشتی پسوڵە ${data.info.total_count}</p>
+        <p>کۆی پسوڵە ${data.info.total_count}</p>
       </div>
-        <table>
-          <thead>
-            <tr>
-              <th>چاککار</th>
-              <th>داغڵکار</th>
-              <th>نرخ دوای داشکان</th>
-              <th>داشکاندن</th>
-              <th>کۆی گشتی</th>
-              <th>بەروار  </th>
-              <th>ژ.وەصڵ</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.item
-              .map(
-                (one_item, index) => `
-              <tr>
-                <td>${one_item.updated_by}</td>
-                <td>${one_item.created_by}</td>
-                <td>${one_item.total_item_item_price - one_item.discount}</td>
-                <td>${one_item.discount}</td>
-                <td>${one_item.total_item_item_price}</td>
-                <td>${one_item.created_at}</td>
-                <td>${one_item.id}</td>
-                <td>${index + 1}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+      <div class="infoRight">
+        <p>کۆی داشکاندنی پسوڵە</p>
+        <p>کۆی دوای داشکاندن</p>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>نرخی دوای داشکاندن</th>
+          <th>داشکاندن</th>
+          <th>کۆی گشتی</th>
+          <th>بەروار</th>
+          <th>ژ.وەصڵ</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- Rows will be added here -->
+      </tbody>
+    </table>
+    <script>
+      const tbody = document.getElementById("table-body");
+
+      for (let i = 0; i < 100; i++) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = 
+                <td>نرخی دوای داشکاندن </td>
+                <td>داشکاندن </td>
+                <td>کۆی گشتی </td>
+                <td>بەروار </td>
+                <td>ژ.وەصڵ </td>
+            ;
+        tbody.appendChild(tr);
+      }
+    </script>
+  </body>
+</html>
+
+      `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
       const pdfBuffer = await page.pdf({
