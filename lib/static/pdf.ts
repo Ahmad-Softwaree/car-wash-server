@@ -97,8 +97,7 @@ export const puppeteerConfig =
   process.env.NODE_ENV == 'development'
     ? {}
     : {
-        executablePath:
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
+        executablePath: '/usr/bin/google-chrome', // Use system Chrome
         args: [
           '--disable-gpu',
           '--disable-setuid-sandbox',

@@ -1786,8 +1786,7 @@ export class ReportService {
     try {
       let data = await this.kogaMovementPrintData(filter, search, from, to);
       const browser = await puppeteer.launch({
-        executablePath:
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
+        executablePath: '/usr/bin/google-chrome', // Use system Chrome
         args: [
           '--disable-gpu',
           '--disable-setuid-sandbox',
