@@ -285,7 +285,6 @@ export class UserService {
           username: data.username,
           role_id: data.role_id,
           password: hashPassword,
-          phone: data.phone,
         })
         .returning('*');
       for (let one of data.part_ids) {
@@ -312,7 +311,6 @@ export class UserService {
           username: data.username,
           role_id: data.role_id,
           password: hashPassword,
-          phone: data.phone,
         })
         .leftJoin('role', 'user.role_id', 'role.id')
         .returning('*');

@@ -159,7 +159,8 @@ export type Item = {
   id: number;
   name: string;
   barcode: string;
-  type: string;
+  type_id: number;
+  type_name: string;
   quantity: number;
   item_purchase_price: number;
   item_sell_price: number;

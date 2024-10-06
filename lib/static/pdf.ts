@@ -1,5 +1,6 @@
 import { PaperFormat } from 'puppeteer';
-
+import { configDotenv } from 'dotenv';
+configDotenv();
 export const pdfStyle = `
     <style>
       * {
@@ -92,4 +93,17 @@ export const pdfBufferObject: {
   waitForFonts: true,
 };
 
-export const puppeteerConfig = {};
+export const puppeteerConfig =
+  process.env.NODE_ENV == 'development'
+    ? {}
+    : {
+        executablePath:
+          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
+        args: [
+          '--disable-gpu',
+          '--disable-setuid-sandbox',
+          '--no-sandbox',
+          '--no-zygote',
+          '--disable-web-security',
+        ],
+      };

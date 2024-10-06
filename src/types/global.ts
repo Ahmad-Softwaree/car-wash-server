@@ -18,6 +18,7 @@ import {
 import { UserWithRole, UserWithRoleAndPart } from './auth';
 import { ExpenseWithType } from './expense';
 import { RoleWithItsParts } from './role-part';
+import { CaseReport } from './report';
 
 export type Id = number;
 
@@ -77,17 +78,3 @@ export type PaginationObject<T extends DataTypes> = {
 };
 
 export type PaginationReturnType<T extends DataTypes> = PaginationObject<T>;
-
-export type CaseReport = {
-  id: number;
-  created_by: number;
-  sold: number | string;
-  sold_price: number | string;
-};
-
-export type SellReportInfo = {
-  sellData: { sell_count: number; total_item_sell_price: number };
-  discountData: number;
-};
-
-export type SellReportData = Sell & { total_item_sell_price: number };

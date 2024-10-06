@@ -16,7 +16,6 @@ import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
 import { Request, Response } from 'express';
 import {
-  CaseReport,
   Filter,
   From,
   Limit,
@@ -32,6 +31,12 @@ import {
   Sell,
   SellItem,
 } from 'database/types';
+import {
+  CaseReport,
+  ItemReportInfo,
+  KogaAllReportInfo,
+  SellReportInfo,
+} from 'src/types/report';
 
 @UseGuards(AuthGuard, PartGuard)
 @ApiTags('report')
@@ -79,9 +84,12 @@ export class ReportController {
     @Res() res: Response,
     @Query('from') from: From,
     @Query('to') to: To,
-  ): Promise<Response<any>> {
+  ): Promise<Response<SellReportInfo>> {
     try {
-      let data: any = await this.reportService.getSellInformation(from, to);
+      let data: SellReportInfo = await this.reportService.getSellInformation(
+        from,
+        to,
+      );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -121,9 +129,10 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<SellReportInfo>> {
     try {
-      let data: any = await this.reportService.getSellInformationSearch(search);
+      let data: SellReportInfo =
+        await this.reportService.getSellInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -207,9 +216,9 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
-  ): Promise<Response<any>> {
+  ): Promise<Response<ItemReportInfo>> {
     try {
-      let data: any = await this.reportService.getItemInformation(
+      let data: ItemReportInfo = await this.reportService.getItemInformation(
         filter,
         from,
         to,
@@ -253,9 +262,10 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<ItemReportInfo>> {
     try {
-      let data: any = await this.reportService.getItemInformationSearch(search);
+      let data: ItemReportInfo =
+        await this.reportService.getItemInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -277,9 +287,22 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.itemPrint(filter, search, from, to, res);
+      let pdf = await this.reportService.itemPrint(
+        filter,
+        search,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -323,9 +346,10 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('filter') filter: Filter,
-  ): Promise<Response<any>> {
+  ): Promise<Response<KogaAllReportInfo>> {
     try {
-      let data: any = await this.reportService.getKogaAllInformation(filter);
+      let data: KogaAllReportInfo =
+        await this.reportService.getKogaAllInformation(filter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -365,9 +389,9 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<KogaAllReportInfo>> {
     try {
-      let data: any =
+      let data: KogaAllReportInfo =
         await this.reportService.getKogaAllInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -389,9 +413,20 @@ export class ReportController {
     @Query('filter') filter: Filter,
 
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.kogaAllPrint(search, filter, res);
+      let pdf = await this.reportService.kogaAllPrint(
+        search,
+        filter,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -499,11 +534,21 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('filter') filter: Filter,
-
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.kogaNullPrint(search, filter, res);
+      let pdf = await this.reportService.kogaNullPrint(
+        search,
+        filter,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

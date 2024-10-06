@@ -25,13 +25,22 @@ import {
   PaginationReturnType,
   To,
   Filter,
-  CaseReport,
-  SellReportInfo,
-  SellReportData,
 } from 'src/types/global';
 import puppeteer from 'puppeteer';
 import { Response } from 'express';
 import { pdfBufferObject, pdfStyle } from 'lib/static/pdf';
+import {
+  CaseReport,
+  ItemReportData,
+  ItemReportInfo,
+  KogaAllReportData,
+  KogaAllReportInfo,
+  KogaMovementReportInfo,
+  KogaNullReportData,
+  KogaNullReportInfo,
+  SellReportData,
+  SellReportInfo,
+} from 'src/types/report';
 @Injectable()
 export class ReportService {
   constructor(@Inject('KnexConnection') private readonly knex: Knex) {}
@@ -168,11 +177,7 @@ export class ReportService {
   async getSellInformationSearch(search: Search): Promise<SellReportInfo> {
     try {
       let discountData: any = await this.knex<Sell>('sell')
-        .select(
-          this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'),
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-        )
+        .select(this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'))
         .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
         .where(function () {
@@ -183,16 +188,13 @@ export class ReportService {
               .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
           }
         })
-        .andWhere('sell.deleted', false)
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username'); // Group by sell and user fields
+        .andWhere('sell.deleted', false);
       const sellData: any = await this.knex<Sell>('sell')
         .select(
           this.knex.raw('COUNT(DISTINCT sell.id) as sell_count'),
           this.knex.raw(
             'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
           ),
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
@@ -207,8 +209,8 @@ export class ReportService {
         })
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
-        .andWhere('sell.deleted', false)
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username'); // Group by sell and user fields
+        .andWhere('sell.deleted', false);
+
       return {
         sellData: sellData[0],
         discountData: discountData[0]?.total_discount,
@@ -294,15 +296,17 @@ export class ReportService {
   <body>
     <p class="username">ڕاپۆرتی لیستی پسوڵەکان</p>
 
-    <div class="info_black">
+      <div class="info_black">
+        <div class="infoRight">
+        <p>کۆی داشکاندنی پسوڵە ${formatMoney(data.info.discountData)}</p>
+        <p>کۆی دوای داشکاندن ${formatMoney(data.info.sellData.total_item_sell_price - data.info.discountData)}</p>
+      </div>
       <div class="infoLeft">
-        <p>کۆی گشتی پسوڵە ${data.info.sellData.total_item_sell_price}</p>
-        <p>کۆی پسوڵە ${data.info.sellData.sell_count}</p>
+         <p>کۆی پسوڵە ${formatMoney(data.info.sellData.sell_count)}</p>
+        <p>کۆی گشتی پسوڵە ${formatMoney(data.info.sellData.total_item_sell_price)}</p>
+     
       </div>
-      <div class="infoRight">
-        <p>کۆی داشکاندنی پسوڵە ${data.info.discountData}</p>
-        <p>کۆی دوای داشکاندن ${data.info.sellData.total_item_sell_price - data.info.discountData}</p>
-      </div>
+    
     </div>
     <table>
       <thead>
@@ -330,10 +334,10 @@ export class ReportService {
     </table>
   <div class="info_black">
       <div class="infoLeft">
-        <p>بەرواری پرنت ${timestampToDateString(Date.now())}</p>
+        <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
       </div>
       <div class="infoRight">
-        <p>${user.username} بکەر</p>
+        <p>${user.username} چاپکراوە لەلایەن</p>
       </div>
     </div>
   </body>
@@ -441,7 +445,11 @@ export class ReportService {
     }
   }
 
-  async getItemInformation(filter: Filter, from: From, to: To): Promise<any> {
+  async getItemInformation(
+    filter: Filter,
+    from: From,
+    to: To,
+  ): Promise<ItemReportInfo> {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
@@ -512,9 +520,11 @@ export class ReportService {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
-                `%${search}%`,
-              ]); // Search by item id
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+
+              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [`%${search}%`]) // Search by item id
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
         .groupBy(
@@ -533,12 +543,10 @@ export class ReportService {
     }
   }
 
-  async getItemInformationSearch(search: Search): Promise<any> {
+  async getItemInformationSearch(search: Search): Promise<ItemReportInfo> {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
-          'createdUser.username as created_by',
-          'updatedUser.username as updated_by',
           this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
           this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
           this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
@@ -563,12 +571,14 @@ export class ReportService {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]) // Search by item id
               .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
                 `%${search}%`,
               ]); // Search by item id
           }
         })
-        .groupBy('createdUser.username', 'updatedUser.username') // Group by necessary fields to avoid aggregation issues
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere('item.deleted', false);
@@ -583,23 +593,27 @@ export class ReportService {
     search: Search,
     from: From,
     to: To,
-  ): Promise<any> {
+  ): Promise<{
+    item: Item[];
+    info: ItemReportInfo;
+  }> {
     try {
       const item: Item[] = await this.knex<Item>('item')
         .select(
+          'sell_item.*',
           'item.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw(
-            'COALESCE(SUM(item_item.item_item_price * item_item.quantity), 0) as total_item_item_price',
-          ), // Sum of item_item_price
+          'item_type.id as type_id',
+          'item_type.name as type_name',
+          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
         )
+        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+
         .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_item', 'item.id', 'item_item.item_id') // Join item_item to sum the prices
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Join sell_item to sum the prices
         .where('item.deleted', false)
-        .andWhere('item_item.deleted', false)
-        .andWhere('item_item.self_deleted', false)
+        .andWhere('sell_item.deleted', false)
+        .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -614,11 +628,24 @@ export class ReportService {
           if (search && search !== '') {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+
+              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [`%${search}%`]) // Search by item id
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
-        .groupBy('item.id', 'createdUser.username', 'updatedUser.username') // Group by item and user fields
+        .groupBy(
+          'sell_item.sell_id',
+          'sell_item.item_id',
+          'sell_item.id',
+          'item_type.name',
+          'item_type.id',
+          'item.id',
+          'createdUser.username',
+          'updatedUser.username',
+        ) // Group by item and user fields
         .orderBy('item.id', 'desc');
 
       let info = !search
@@ -636,160 +663,92 @@ export class ReportService {
     search: Search,
     from: From,
     to: To,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
-      let data = await this.itemPrintData(filter, search, from, to);
-      const browser = await puppeteer.launch({
-        executablePath:
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-      });
-      const page = await browser.newPage();
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
 
-      await page.setViewport({ width: 1080, height: 1024 });
+      let data = await this.itemPrintData(filter, search, from, to);
+
+      let { browser, page } = await generatePuppeteer({});
 
       const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display:flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            font-family:Calibri;
+      <!DOCTYPE html>
+<html lang="en">
+  <head>
+ ${pdfStyle}
+  </head>
 
-          }
-          .info {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .infoRight {
-            text-align: right;
-          
-          }
-          .infoLeft {
-            text-align: right;
-          }
-          .username {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            margin-top: 30px;
-            line-height: 1.3;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            
-          }
-          th, td {
-            border: 1px solid black;
-    
-            text-align: center;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-left: 5px;
-            padding-right: 5px;
-            white-space: pre-wrap;
-            
-          }
-          th {
-            background-color: black;
-            padding-left: 5px;
-            padding-right: 5px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-          }
-        
-        </style>
-      </head>
-      <body>
-       
-     
+  <body>
+    <p class="username">ڕاپۆرتی لیستی کاڵاکان</p>
 
-
-
-            <p class="username">ڕاپۆرتی فرۆشتن
-            </p>
-
-            <div class="info">
-            <div class="infoLeft">
-                <p>${formatTimestampToDate(
-                  parseInt(data.item.created_at),
-                )} بەروار</p>
-                <p>${data.item.id} ر.وصل</p>
-            </div>
-            <div class="infoRight">
-             
-            </div>
-          </div>
-       
-
-
-
-     
+      <div class="info_black">
+         <div class="infoRight">
+        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_sell_price)}</p>
+        <p>کۆی گشتی ${formatMoney(data.info.total_price)}</p>
       </div>
-        <table>
-          <thead>
-            <tr>
-              <th>چاککار</th>
-              <th>داغڵکار</th>
-              <th>نرخ دوای داشکان</th>
-              <th>داشکاندن</th>
-              <th>کۆی گشتی</th>
-              <th>بەروار  </th>
-              <th>ژ.وەصڵ</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.item
-              .map(
-                (one_item, index) => `
-              <tr>
-                <td>${one_item.updated_by}</td>
-                <td>${one_item.created_by}</td>
-                <td>${one_item.total_item_item_price - one_item.discount}</td>
-                <td>${one_item.discount}</td>
-                <td>${one_item.total_item_item_price}</td>
-                <td>${one_item.created_at}</td>
-                <td>${one_item.id}</td>
-                <td>${index + 1}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+      <div class="infoLeft">
+          <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
+        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_quantity)}</p>
+    
+      </div>
+   
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>بەروار</th>
+          <th>کۆی گشتی</th>
+
+          <th>نرخی فرۆشتن</th>
+
+          <th>دانەی فرۆشراو</th>
+          <th>جۆری کالا</th>
+          <th>بارکۆد</th>
+          <th>ناوی کاڵا</th>
+          <th>ژ.وەصڵ</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      ${data.item.map((val: ItemReportData, _index: number) => {
+        return `
+       <tr>
+          <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+          <td>${formatMoney(val.item_sell_price * val.total_quantity)}</td>
+          <td>${formatMoney(val.item_sell_price)}</td>
+          <td>${formatMoney(val.total_quantity)}</td>
+          <td>${val.type_name}</td>
+          <td>${val.barcode}</td>
+          <td>${val.name}</td>
+          <td>${val.sell_id}</td>
+       </tr>
+          `;
+      })}
+      </tbody>
+    </table>
+  <div class="info_black">
+      <div class="infoLeft">
+        <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+      </div>
+      <div class="infoRight">
+        <p>${user.username} چاپکراوە لەلایەن</p>
+      </div>
+    </div>
+  </body>
+</html>
+
+      `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true, // Ensures backgrounds are printed
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -810,15 +769,15 @@ export class ReportService {
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
+          this.knex.raw('SUM(sell_item.quantity) as total_quantity'),
           this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity',
           ),
         )
-        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
         .andWhere(function () {
           this.where('sell_item.deleted', false).orWhereNull(
@@ -833,12 +792,12 @@ export class ReportService {
           }
         })
         .groupBy(
-          'item.id', // Group by item.id
+          'item.id',
           'item_type.name',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
-        ) // Grouping at the item level
+        )
         .orderBy('item.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -864,13 +823,7 @@ export class ReportService {
     }
   }
 
-  async getKogaAllInformation(filter: Filter): Promise<{
-    total_count: number;
-    total_item_quantity: number;
-    total_actual_quantity: number;
-    total_item_purchase_price: number;
-    total_actual_quantity_price: number;
-  }> {
+  async getKogaAllInformation(filter: Filter): Promise<KogaAllReportInfo> {
     try {
       const itemData: any = await this.knex<Item>('item')
         .select(
@@ -884,6 +837,9 @@ export class ReportService {
           ),
           this.knex.raw(
             'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
@@ -938,7 +894,7 @@ export class ReportService {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
-
+              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
@@ -957,24 +913,12 @@ export class ReportService {
     }
   }
 
-  async getKogaAllInformationSearch(search: Search): Promise<{
-    total_count: number;
-    total_item_quantity: number;
-    total_actual_quantity: number;
-    total_item_purchase_price: number;
-    total_actual_quantity_price: number;
-  }> {
+  async getKogaAllInformationSearch(
+    search: Search,
+  ): Promise<KogaAllReportInfo> {
     try {
-      const itemData: {
-        total_count: number;
-        total_item_quantity: number;
-        total_actual_quantity: number;
-        total_item_purchase_price: number;
-        total_actual_quantity_price: number;
-      } = await this.knex<Item>('item')
+      const itemData: any = await this.knex<Item>('item')
         .select(
-          'createdUser.username as created_by',
-          'updatedUser.username as updated_by',
           this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
           this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
@@ -985,6 +929,9 @@ export class ReportService {
           ),
           this.knex.raw(
             'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
@@ -997,7 +944,7 @@ export class ReportService {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
               .orWhere('item.barcode', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-
+              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
@@ -1006,8 +953,7 @@ export class ReportService {
           this.where('sell_item.deleted', false).orWhereNull(
             'sell_item.deleted',
           );
-        })
-        .groupBy('createdUser.username', 'updatedUser.username'); // Grouping at the item level
+        });
 
       return itemData[0];
     } catch (error) {
@@ -1020,30 +966,31 @@ export class ReportService {
     filter: Filter,
   ): Promise<{
     item: Item[];
-    info: {
-      total_count: number;
-      total_item_quantity: number;
-      total_actual_quantity: number;
-      total_item_purchase_price: number;
-      total_actual_quantity_price: number;
-    };
+    info: KogaAllReportInfo;
   }> {
     try {
       const item: Item[] = await this.knex<Item>('item')
         .select(
           'item.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'item_type.id as type_id',
+          'item_type.name as type_name',
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
+          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
           this.knex.raw(
-            'COALESCE(SUM(item_item.item_item_price * item_item.quantity), 0) as total_item_item_price',
-          ), // Sum of item_item_price
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
+          ),
         )
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
         .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_item', 'item.id', 'item_item.item_id') // Join item_item to sum the prices
+        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
         .where('item.deleted', false)
-        .andWhere('item_item.deleted', false)
-        .andWhere('item_item.self_deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
         .andWhere(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -1055,10 +1002,18 @@ export class ReportService {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
-        .groupBy('item.id', 'createdUser.username', 'updatedUser.username') // Group by item and user fields
+        .groupBy(
+          'item.id', // Group by item.id
+          'item_type.name',
+          'item_type.id',
+          'createdUser.username',
+          'updatedUser.username',
+        )
         .orderBy('item.id', 'desc');
 
       let info = !search
@@ -1074,156 +1029,104 @@ export class ReportService {
   async kogaAllPrint(
     search: Search,
     filter: Filter,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
       let data = await this.kogaAllPrintData(search, filter);
-      const browser = await puppeteer.launch({});
-      const page = await browser.newPage();
 
-      await page.setViewport({ width: 1080, height: 1024 });
-
+      let { browser, page } = await generatePuppeteer({});
+      console.log(data.item.length);
       const htmlContent = `
       <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Raha Koga Report</title>
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        font-family: Calibri;
-      }
-
-      .info {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        width: 100%;
-      }
-      .info_black {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        width: 100%;
-        background-color: black;
-        color: white;
-        padding-inline: 2rem;
-      }
-      .infoRight {
-        text-align: right;
-        font-size: 20px;
-      }
-
-      .infoLeft {
-        text-align: right;
-        font-size: 20px;
-      }
-
-      .username {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        font-size: 30px;
-        margin-top: 30px;
-        line-height: 1.3;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-
-      th,
-      td {
-        border: 1px solid black;
-        text-align: center;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        padding-left: 5px;
-        padding-right: 5px;
-        white-space: pre-wrap;
-      }
-
-      th {
-        color: white;
-
-        background-color: black;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-top: 20px;
-        padding-bottom: 20px;
-      }
-    </style>
+ ${pdfStyle}
   </head>
 
   <body>
-    <p class="username">ڕاپۆرتی لیستی پسوڵەکان</p>
+    <p class="username">ڕاپۆرتی  جەردی کاڵا - کۆگا</p>
 
-    <div class="info_black">
-      <div class="infoLeft">
-        <p>کۆی گشتی پسوڵە ${data.info.total_count}</p>
-        <p>کۆی پسوڵە ${data.info.total_count}</p>
-      </div>
+      <div class="info_black">
       <div class="infoRight">
-        <p>کۆی داشکاندنی پسوڵە</p>
-        <p>کۆی دوای داشکاندن</p>
+  
+        <p>کۆی نرخی کڕاو ${formatMoney(data.info.total_item_purchase_price)}</p>
+        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_actual_quantity_price)}</p>
+        <p>تێچوو  ${formatMoney(data.info.total_cost)}</p>
+
       </div>
+      <div class="infoLeft">
+      <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
+        <p>کۆی دانەی کڕاو ${formatMoney(data.info.total_item_quantity)}</p>
+        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_actual_quantity)}</p>
+            <p>کۆی دانەی ماوە ${formatMoney(data.info.total_item_quantity - data.info.total_actual_quantity)}</p>
+        
+      </div>
+      
     </div>
     <table>
       <thead>
         <tr>
-          <th>نرخی دوای داشکاندن</th>
-          <th>داشکاندن</th>
-          <th>کۆی گشتی</th>
-          <th>بەروار</th>
-          <th>ژ.وەصڵ</th>
+         
+          <th>تێچوو</th>
+
+          <th>دانەی ماوە</th>
+
+          <th>دانەی فرۆشراو</th>
+          <th>نرخی فرۆشتن</th>
+
+          <th>دانەی کڕاو</th>
+
+          <th>نرخی کڕین</th>
+
+          <th>جۆر</th>
+          <th>بارکۆد</th>
+          <th>ناو</th>
+       
         </tr>
       </thead>
       <tbody id="table-body">
-        <!-- Rows will be added here -->
+      ${data.item.map((val: KogaAllReportData, _index: number) => {
+        return `
+       <tr>
+          <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
+          <td>${formatMoney(val.actual_quantity)}</td>
+          <td>${formatMoney(val.total_quantity)}</td>
+          <td>${formatMoney(val.item_sell_price)}</td>
+          <td>${formatMoney(val.quantity)}</td>
+          <td>${formatMoney(val.item_purchase_price)}</td>
+          <td>${val.type_name}</td>
+          <td>${val.barcode}</td>
+          <td>${val.name}</td>
+       </tr>
+          `;
+      })}
       </tbody>
     </table>
-    <script>
-      const tbody = document.getElementById("table-body");
-
-      for (let i = 0; i < 100; i++) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = 
-                <td>نرخی دوای داشکاندن </td>
-                <td>داشکاندن </td>
-                <td>کۆی گشتی </td>
-                <td>بەروار </td>
-                <td>ژ.وەصڵ </td>
-            ;
-        tbody.appendChild(tr);
-      }
-    </script>
+  <div class="info_black">
+      <div class="infoLeft">
+        <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+      </div>
+      <div class="infoRight">
+        <p>${user.username} چاپکراوە لەلایەن</p>
+      </div>
+    </div>
   </body>
 </html>
 
       `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true, // Ensures backgrounds are printed
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -1302,7 +1205,7 @@ export class ReportService {
     }
   }
 
-  async getKogaNullInformation(filter: Filter): Promise<any> {
+  async getKogaNullInformation(filter: Filter): Promise<KogaNullReportInfo> {
     try {
       const itemData: any = await this.knex<Item>('item')
         .select(
@@ -1316,6 +1219,9 @@ export class ReportService {
           ),
           this.knex.raw(
             'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
@@ -1373,20 +1279,21 @@ export class ReportService {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
 
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .groupBy(
-          'item.id', // Group by item.id
+          'item.id',
           'item_type.name',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
-        ) // Grouping at the item level
+        )
         .andWhereRaw(
           'item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= 0',
-        ) // Filter for actual_quantity = 0
+        )
         .orderBy('item.id', 'desc');
 
       return item;
@@ -1395,12 +1302,12 @@ export class ReportService {
     }
   }
 
-  async getKogaNullInformationSearch(search: Search): Promise<any> {
+  async getKogaNullInformationSearch(
+    search: Search,
+  ): Promise<KogaNullReportInfo> {
     try {
       const itemData: any = await this.knex<Item>('item')
         .select(
-          'createdUser.username as created_by',
-          'updatedUser.username as updated_by',
           this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
           this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
@@ -1411,6 +1318,9 @@ export class ReportService {
           ),
           this.knex.raw(
             'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
@@ -1423,7 +1333,7 @@ export class ReportService {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
               .orWhere('item.barcode', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-
+              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
@@ -1435,8 +1345,7 @@ export class ReportService {
         })
         .andWhereRaw(
           'item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= 0',
-        ) // Filter for actual_quantity = 0
-        .groupBy('createdUser.username', 'updatedUser.username'); // Grouping at the item level
+        ); // Filter for actual_quantity = 0
 
       return itemData[0];
     } catch (error) {
@@ -1444,23 +1353,32 @@ export class ReportService {
     }
   }
 
-  async kogaNullPrintData(search: Search, filter: Filter): Promise<any> {
+  async kogaNullPrintData(
+    search: Search,
+    filter: Filter,
+  ): Promise<{
+    item: Item[];
+    info: KogaNullReportInfo;
+  }> {
     try {
       const item: Item[] = await this.knex<Item>('item')
         .select(
           'item.*',
+          'item_type.id as type_id',
+          'item_type.name as type_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
           this.knex.raw(
-            'COALESCE(SUM(item_item.item_item_price * item_item.quantity), 0) as total_item_item_price',
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
           ), // Sum of item_item_price
         )
         .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_item', 'item.id', 'item_item.item_id') // Join item_item to sum the prices
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Join sell_item to sum the prices
+        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
         .where('item.deleted', false)
-        .andWhere('item_item.deleted', false)
-        .andWhere('item_item.self_deleted', false)
+        .andWhere('sell_item.deleted', false)
+        .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -1471,11 +1389,23 @@ export class ReportService {
           if (search && search !== '') {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
-        .groupBy('item.id', 'createdUser.username', 'updatedUser.username') // Group by item and user fields
+        .groupBy(
+          'item.id',
+          'item_type.name',
+          'item_type.id',
+          'createdUser.username',
+          'updatedUser.username',
+        )
+        .andWhereRaw(
+          'item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= 0',
+        ) // Filter for actual_quantity = 0
         .orderBy('item.id', 'desc');
 
       let info = !search
@@ -1491,160 +1421,103 @@ export class ReportService {
   async kogaNullPrint(
     search: Search,
     filter: Filter,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
       let data = await this.kogaNullPrintData(search, filter);
-      const browser = await puppeteer.launch({
-        executablePath:
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-      });
-      const page = await browser.newPage();
 
-      await page.setViewport({ width: 1080, height: 1024 });
-
+      let { browser, page } = await generatePuppeteer({});
       const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display:flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            font-family:Calibri;
+      <!DOCTYPE html>
+<html lang="en">
+  <head>
+ ${pdfStyle}
+  </head>
 
-          }
-          .info {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .infoRight {
-            text-align: right;
-          
-          }
-          .infoLeft {
-            text-align: right;
-          }
-          .username {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            margin-top: 30px;
-            line-height: 1.3;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            
-          }
-          th, td {
-            border: 1px solid black;
-    
-            text-align: center;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-left: 5px;
-            padding-right: 5px;
-            white-space: pre-wrap;
-            
-          }
-          th {
-            background-color: black;
-            padding-left: 5px;
-            padding-right: 5px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-          }
-        
-        </style>
-      </head>
-      <body>
-       
-     
+  <body>
+    <p class="username">ڕاپۆرتی  جەردی کاڵا - تەواوبوو</p>
 
+      <div class="info_black">
+      <div class="infoRight">
+  
+        <p>کۆی نرخی کڕاو ${formatMoney(data.info.total_item_purchase_price)}</p>
+        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_actual_quantity_price)}</p>
+        <p>تێچوو  ${formatMoney(data.info.total_cost)}</p>
 
-
-            <p class="username">ڕاپۆرتی فرۆشتن
-            </p>
-
-            <div class="info">
-            <div class="infoLeft">
-                <p>${formatTimestampToDate(
-                  parseInt(data.item.created_at),
-                )} بەروار</p>
-                <p>${data.item.id} ر.وصل</p>
-            </div>
-            <div class="infoRight">
-             
-            </div>
-          </div>
-       
-
-
-
-     
       </div>
-        <table>
-          <thead>
-            <tr>
-              <th>چاککار</th>
-              <th>داغڵکار</th>
-              <th>نرخ دوای داشکان</th>
-              <th>داشکاندن</th>
-              <th>کۆی گشتی</th>
-              <th>بەروار  </th>
-              <th>ژ.وەصڵ</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.item
-              .map(
-                (one_item, index) => `
-              <tr>
-                <td>${one_item.updated_by}</td>
-                <td>${one_item.created_by}</td>
-                <td>${one_item.total_item_item_price - one_item.discount}</td>
-                <td>${one_item.discount}</td>
-                <td>${one_item.total_item_item_price}</td>
-                <td>${one_item.created_at}</td>
-                <td>${one_item.id}</td>
-                <td>${index + 1}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+      <div class="infoLeft">
+      <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
+        <p>کۆی دانەی کڕاو ${formatMoney(data.info.total_item_quantity)}</p>
+        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_actual_quantity)}</p>
+            <p>کۆی دانەی ماوە ${formatMoney(data.info.total_item_quantity - data.info.total_actual_quantity)}</p>
+        
+      </div>
+      
+    </div>
+    <table>
+      <thead>
+        <tr>
+         
+          <th>تێچوو</th>
+
+          <th>دانەی ماوە</th>
+
+          <th>دانەی فرۆشراو</th>
+          <th>نرخی فرۆشتن</th>
+
+          <th>دانەی کڕاو</th>
+
+          <th>نرخی کڕین</th>
+
+          <th>جۆر</th>
+          <th>بارکۆد</th>
+          <th>ناو</th>
+       
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      ${data.item.map((val: KogaNullReportData, _index: number) => {
+        return `
+       <tr>
+          <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
+          <td>${formatMoney(val.actual_quantity)}</td>
+          <td>${formatMoney(val.total_quantity)}</td>
+          <td>${formatMoney(val.item_sell_price)}</td>
+          <td>${formatMoney(val.quantity)}</td>
+          <td>${formatMoney(val.item_purchase_price)}</td>
+          <td>${val.type_name}</td>
+          <td>${val.barcode}</td>
+          <td>${val.name}</td>
+       </tr>
+          `;
+      })}
+      </tbody>
+    </table>
+  <div class="info_black">
+      <div class="infoLeft">
+        <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+      </div>
+      <div class="infoRight">
+        <p>${user.username} چاپکراوە لەلایەن</p>
+      </div>
+    </div>
+  </body>
+</html>
+
+      `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true, // Ensures backgrounds are printed
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -1730,7 +1603,7 @@ export class ReportService {
     filter: Filter,
     from: From,
     to: To,
-  ): Promise<any> {
+  ): Promise<KogaMovementReportInfo> {
     try {
       const itemData: any = await this.knex<ItemQuantityHistory>(
         'item_quantity_history',
@@ -1796,6 +1669,7 @@ export class ReportService {
             // Searching by the username of the created user
             this.where('user.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
@@ -1803,6 +1677,7 @@ export class ReportService {
           'item_quantity_history.id',
           'item.id', // Group by item.id
           'user.username',
+          'item.name',
           'item_type.id', // Group by item_type.id
         ) // Grouping at the item level
 
@@ -2207,11 +2082,7 @@ export class ReportService {
   async getBillProfitInformationSearch(search: Search): Promise<any> {
     try {
       let discountData: any = await this.knex<Sell>('sell')
-        .select(
-          this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'),
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-        )
+        .select(this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'))
         .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
         .where(function () {
@@ -2222,8 +2093,7 @@ export class ReportService {
               .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
           }
         })
-        .andWhere('sell.deleted', false)
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username'); // Group by sell and user fields
+        .andWhere('sell.deleted', false);
       const sellData: any = await this.knex<Sell>('sell')
         .select(
           this.knex.raw('COUNT(DISTINCT sell.id) as sell_count'),
@@ -2233,8 +2103,6 @@ export class ReportService {
           this.knex.raw(
             'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_item_purchase_price',
           ), // Sum of item_purchase_price
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
@@ -2249,8 +2117,7 @@ export class ReportService {
         })
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
-        .andWhere('sell.deleted', false)
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username'); // Group by sell and user fields
+        .andWhere('sell.deleted', false);
       return {
         sellData: sellData[0],
         discountData: discountData[0]?.total_discount,
@@ -2661,8 +2528,6 @@ export class ReportService {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
-          'createdUser.username as created_by',
-          'updatedUser.username as updated_by',
           this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
           this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
           this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
@@ -2695,7 +2560,7 @@ export class ReportService {
               ]); // Search by item id
           }
         })
-        .groupBy('createdUser.username', 'updatedUser.username') // Group by necessary fields to avoid aggregation issues
+
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere('item.deleted', false);
@@ -3081,7 +2946,6 @@ export class ReportService {
               .orWhereRaw('CAST(expense.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
-        .groupBy('createdUser.username', 'updatedUser.username') // Group by necessary fields
         .andWhere('expense.deleted', false);
 
       return itemData[0];
@@ -3151,7 +3015,7 @@ export class ReportService {
     res: Response,
   ): Promise<void> {
     try {
-      let data = await this.itemPrintData(filter, search, from, to);
+      let data = await this.expensePrintData(filter, search, from, to);
       const browser = await puppeteer.launch({
         executablePath:
           'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
@@ -3447,8 +3311,7 @@ export class ReportService {
             });
           }
         })
-        .andWhere('sell.deleted', false)
-        .groupBy('user.username', 'user.id'); // Group by user fields
+        .andWhere('sell.deleted', false);
 
       return itemData[0]; // Return the aggregated data
     } catch (error) {

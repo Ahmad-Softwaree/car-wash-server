@@ -20,7 +20,7 @@ import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
 import { CreateItemDto } from './dto/create-item-dto';
 import { UpdateItemDto } from './dto/update-item-dto';
 import { ItemWithType } from 'src/types/item';
-import { Item, ItemQuantityHistory } from 'database/types';
+import { Item, ItemQuantityHistory, SellItem } from 'database/types';
 import { ChangeItemQuantityDto } from './dto/change-item-quantity-dto';
 
 @Injectable()
@@ -446,6 +446,14 @@ export class ItemService {
 
   async delete(id: Id): Promise<Id> {
     try {
+      let check = await this.knex
+        .table<SellItem>('sell_item')
+        .where('item_id', id)
+        .count('id as count')
+        .first();
+      if (check.count != 0) {
+        throw new BadRequestException('ناتوانی بیسڕیتەوە، چونکە بەکارهاتوە');
+      }
       await this.knex<Item>('item').where('id', id).update({ deleted: true });
       return id;
     } catch (error) {
