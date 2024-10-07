@@ -32,7 +32,10 @@ import {
   SellItem,
 } from 'database/types';
 import {
+  BillProfitReportInfo,
   CaseReport,
+  ExpenseReportInfo,
+  ItemProfitReportInfo,
   ItemReportInfo,
   KogaAllReportInfo,
   KogaMovementReportInfo,
@@ -671,7 +674,7 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
       let pdf = await this.reportService.kogaMovementPrint(
         search,
@@ -737,12 +740,10 @@ export class ReportController {
     @Res() res: Response,
     @Query('from') from: From,
     @Query('to') to: To,
-  ): Promise<Response<any>> {
+  ): Promise<Response<BillProfitReportInfo>> {
     try {
-      let data: any = await this.reportService.getBillProfitInformation(
-        from,
-        to,
-      );
+      let data: BillProfitReportInfo =
+        await this.reportService.getBillProfitInformation(from, to);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -788,9 +789,9 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<BillProfitReportInfo>> {
     try {
-      let data: any =
+      let data: BillProfitReportInfo =
         await this.reportService.getBillProfitInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -815,9 +816,21 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.billProfitPrint(search, from, to, res);
+      let pdf = await this.reportService.billProfitPrint(
+        search,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -872,13 +885,10 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
-  ): Promise<Response<any>> {
+  ): Promise<Response<ItemProfitReportInfo>> {
     try {
-      let data: any = await this.reportService.getItemProfitInformation(
-        filter,
-        from,
-        to,
-      );
+      let data: ItemProfitReportInfo =
+        await this.reportService.getItemProfitInformation(filter, from, to);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -925,9 +935,9 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<ItemProfitReportInfo>> {
     try {
-      let data: any =
+      let data: ItemProfitReportInfo =
         await this.reportService.getItemProfitInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -953,9 +963,22 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.itemProfitPrint(filter, search, from, to, res);
+      let pdf = await this.reportService.itemProfitPrint(
+        filter,
+        search,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1004,13 +1027,10 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
-  ): Promise<Response<any>> {
+  ): Promise<Response<ExpenseReportInfo>> {
     try {
-      let data: any = await this.reportService.getExpenseInformation(
-        filter,
-        from,
-        to,
-      );
+      let data: ExpenseReportInfo =
+        await this.reportService.getExpenseInformation(filter, from, to);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1050,9 +1070,9 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<ExpenseReportInfo>> {
     try {
-      let data: any =
+      let data: ExpenseReportInfo =
         await this.reportService.getExpenseInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -1075,9 +1095,22 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.expensePrint(filter, search, from, to, res);
+      let pdf = await this.reportService.expensePrint(
+        filter,
+        search,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

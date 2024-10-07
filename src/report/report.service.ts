@@ -30,7 +30,13 @@ import puppeteer from 'puppeteer';
 import { Response } from 'express';
 import { pdfBufferObject, pdfStyle } from 'lib/static/pdf';
 import {
+  BillProfitReportData,
+  BillProfitReportInfo,
   CaseReport,
+  ExpenseReportData,
+  ExpenseReportInfo,
+  ItemProfitReportData,
+  ItemProfitReportInfo,
   ItemReportData,
   ItemReportInfo,
   KogaAllReportData,
@@ -56,15 +62,15 @@ export class ReportService {
       const sell: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_sell_price
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
+          ),
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id') // Join sell_item to sum the prices
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
+        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .where('sell.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
@@ -75,7 +81,7 @@ export class ReportService {
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username') // Group by sell and user fields
+        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -102,21 +108,14 @@ export class ReportService {
 
   async getSellInformation(from: From, to: To): Promise<SellReportInfo> {
     try {
-      let discountData: any = await this.knex<Sell>('sell')
-        .select(this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'))
-        .where(function () {
-          if (from !== '' && from && to !== '' && to) {
-            const fromDate = timestampToDateString(Number(from));
-            const toDate = timestampToDateString(Number(to));
-            this.whereBetween('created_at', [fromDate, toDate]);
-          }
-        })
-        .andWhere('deleted', false);
       const sellData: any = await this.knex<Sell>('sell')
         .select(
+          this.knex.raw(
+            'COALESCE(SUM(sell.discount), 0) as total_sell_discount',
+          ),
           this.knex.raw('COUNT(DISTINCT sell.id) as sell_count'),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
           ),
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
@@ -132,10 +131,7 @@ export class ReportService {
         .andWhere('sell_item.self_deleted', false)
         .andWhere('sell.deleted', false);
 
-      return {
-        sellData: sellData[0],
-        discountData: discountData[0].total_discount,
-      };
+      return sellData[0];
     } catch (error) {
       throw new Error(error.message);
     }
@@ -146,27 +142,26 @@ export class ReportService {
       const sell: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_sell_price
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
+          ),
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id') // Join sell_item to sum the prices
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
+        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .where('sell.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username') // Group by sell and user fields
+        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc');
 
       return sell;
@@ -177,45 +172,29 @@ export class ReportService {
 
   async getSellInformationSearch(search: Search): Promise<SellReportInfo> {
     try {
-      let discountData: any = await this.knex<Sell>('sell')
-        .select(this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'))
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .where(function () {
-          if (search && search !== '') {
-            // Searching by the username of the created user
-            this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
-          }
-        })
-        .andWhere('sell.deleted', false);
       const sellData: any = await this.knex<Sell>('sell')
         .select(
+          this.knex.raw('COALESCE(SUM(sell.discount), 0) as total_discount'),
           this.knex.raw('COUNT(DISTINCT sell.id) as sell_count'),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
           ),
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') //
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .where(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere('sell.deleted', false);
 
-      return {
-        sellData: sellData[0],
-        discountData: discountData[0]?.total_discount,
-      };
+      return sellData[0];
     } catch (error) {
       throw new Error(error.message);
     }
@@ -233,15 +212,15 @@ export class ReportService {
       const sell: SellReportData[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_sell_price
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
+          ),
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id') // Join sell_item to sum the prices
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
+        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .where('sell.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
@@ -252,13 +231,12 @@ export class ReportService {
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username') // Group by sell and user fields
+        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc');
 
       let info = !search
@@ -299,12 +277,12 @@ export class ReportService {
 
       <div class="info_black">
         <div class="infoRight">
-        <p>کۆی داشکاندنی پسوڵە ${formatMoney(data.info.discountData)}</p>
-        <p>کۆی دوای داشکاندن ${formatMoney(data.info.sellData.total_item_sell_price - data.info.discountData)}</p>
+        <p>کۆی داشکاندنی پسوڵەکان ${formatMoney(data.info.total_sell_discount)}</p>
+        <p>کۆی دوای داشکاندن ${formatMoney(data.info.total_sell_price - data.info.total_sell_discount)}</p>
       </div>
       <div class="infoLeft">
-         <p>کۆی پسوڵە ${formatMoney(data.info.sellData.sell_count)}</p>
-        <p>کۆی گشتی پسوڵە ${formatMoney(data.info.sellData.total_item_sell_price)}</p>
+         <p>کۆی ژمارەی پسوڵە ${formatMoney(data.info.sell_count)}</p>
+        <p>کۆی گشتی نرخی پسوڵەکان ${formatMoney(data.info.total_sell_price)}</p>
      
       </div>
     
@@ -323,9 +301,9 @@ export class ReportService {
       ${data.sell.map((val: SellReportData, _index: number) => {
         return `
        <tr>
-           <td>${formatMoney(val.total_item_sell_price - val.discount)}</td>
+           <td>${formatMoney(val.total_sell_price - val.discount)}</td>
                 <td>${formatMoney(val.discount)}</td>
-                <td>${formatMoney(val.total_item_sell_price)}</td>
+                <td>${formatMoney(val.total_sell_price)}</td>
                 <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
                 <td>${val.id}</td>
        </tr>
@@ -370,31 +348,26 @@ export class ReportService {
       const sellItem: SellItem[] = await this.knex<SellItem>('sell_item')
         .select(
           'sell_item.*',
-          'item.*',
-          'sell.*',
+          'item.name as item_name',
+          'item.barcode as item_barcode',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
-
-        .leftJoin('sell', 'sell_item.sell_id', 'sell.id') // Join sell_item to sum the prices
-        .leftJoin('item', 'sell_item.item_id', 'item.id') // Join sell_item to sum the prices
-
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-        .where('sell.deleted', false)
-        .andWhere('item.deleted', false)
+        )
+        .leftJoin('item', 'sell_item.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .where('item.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
 
@@ -407,21 +380,10 @@ export class ReportService {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            // Set the toDate to the end of that day
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy(
-          'sell_item.sell_id',
-          'sell_item.item_id',
-          'sell_item.id',
-          'sell.id',
-          'item_type.name',
-          'item_type.id',
-          'item.id',
-          'createdUser.username',
-          'updatedUser.username',
-        ) // Group by sell_id and item_id to avoid duplicate entries
+
         .orderBy('sell_item.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -454,16 +416,15 @@ export class ReportService {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
-          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
-          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
+          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'),
+          this.knex.raw('SUM(sell_item.quantity) as total_sell'),
+          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'),
           this.knex.raw(
             'SUM(sell_item.item_sell_price * sell_item.quantity) as total_price',
-          ), // Sum of quantities
+          ),
         )
-
-        .leftJoin('item', 'item.id', 'sell_item.item_id') // Join with item table
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('item', 'item.id', 'sell_item.item_id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -491,29 +452,29 @@ export class ReportService {
       const item: SellItem[] = await this.knex<SellItem>('sell_item')
         .select(
           'sell_item.*',
-          'item.*',
-          'sell.*',
+          'item.name as item_name',
+          'item.barcode as item_barcode',
           'item_type.id as type_id',
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
         )
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
-        .leftJoin('sell', 'sell_item.sell_id', 'sell.id') // Join sell_item to sell
-        .leftJoin('item', 'sell_item.item_id', 'item.id') // Join sell_item to item
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-        .where('sell.deleted', false)
-        .andWhere('item.deleted', false)
+        )
+
+        .leftJoin('item', 'sell_item.item_id', 'item.id')
+        .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
+
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .where('item.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
@@ -524,18 +485,10 @@ export class ReportService {
               .orWhere('item.name', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
 
-              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [`%${search}%`]) // Search by item id
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy(
-          'sell_item.id',
-          'item.id',
-          'sell.id',
-          'item_type.id',
-          'createdUser.username',
-          'updatedUser.username',
-        ) // Group by necessary fields to avoid aggregation issues
+
         .orderBy('sell_item.id', 'desc');
 
       return item;
@@ -548,36 +501,32 @@ export class ReportService {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
-          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
-          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
+          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'),
+          this.knex.raw('SUM(sell_item.quantity) as total_sell'),
+          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'),
           this.knex.raw(
             'SUM(sell_item.item_sell_price * sell_item.quantity) as total_price',
-          ), // Sum of quantities
+          ),
         )
-        .leftJoin('item', 'item.id', 'sell_item.item_id') // Join with item table
+        .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
+        .leftJoin('item', 'item.id', 'sell_item.item_id')
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
-
+        )
         .where(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]) // Search by item id
-              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
-                `%${search}%`,
-              ]); // Search by item id
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .andWhere('sell_item.deleted', false)
@@ -595,23 +544,24 @@ export class ReportService {
     from: From,
     to: To,
   ): Promise<{
-    item: Item[];
+    item: SellItem[];
     info: ItemReportInfo;
   }> {
     try {
-      const item: Item[] = await this.knex<Item>('item')
+      const item: SellItem[] = await this.knex<SellItem>('sell_item')
         .select(
           'sell_item.*',
-          'item.*',
+          'item.name as item_name',
+          'item.barcode as item_barcode',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Join sell_item to sum the prices
+        .leftJoin('item', 'sell_item.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .where('item.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
@@ -624,29 +574,18 @@ export class ReportService {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('item.created_at', [fromDate, toDate]);
+            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
-
-              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [`%${search}%`]) // Search by item id
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
+                `%${search}%`,
+              ]);
           }
         })
-        .groupBy(
-          'sell_item.sell_id',
-          'sell_item.item_id',
-          'sell_item.id',
-          'item_type.name',
-          'item_type.id',
-          'item.id',
-          'createdUser.username',
-          'updatedUser.username',
-        ) // Group by item and user fields
         .orderBy('item.id', 'desc');
 
       let info = !search
@@ -689,12 +628,12 @@ export class ReportService {
 
       <div class="info_black">
          <div class="infoRight">
-        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_sell_price)}</p>
-        <p>کۆی گشتی ${formatMoney(data.info.total_price)}</p>
+        <p>کۆی نرخی فرۆشتن ${formatMoney(data.info.total_sell_price)}</p>
+        <p>کۆی گشتی نرخی فرۆشراو ${formatMoney(data.info.total_price)}</p>
       </div>
       <div class="infoLeft">
           <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
-        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_quantity)}</p>
+        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_sell)}</p>
     
       </div>
    
@@ -719,12 +658,12 @@ export class ReportService {
         return `
        <tr>
           <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
-          <td>${formatMoney(val.item_sell_price * val.total_quantity)}</td>
+          <td>${formatMoney(val.item_sell_price * val.quantity)}</td>
           <td>${formatMoney(val.item_sell_price)}</td>
-          <td>${formatMoney(val.total_quantity)}</td>
+          <td>${formatMoney(val.quantity)}</td>
           <td>${val.type_name}</td>
-          <td>${val.barcode}</td>
-          <td>${val.name}</td>
+          <td>${val.item_barcode}</td>
+          <td>${val.item_name}</td>
           <td>${val.sell_id}</td>
        </tr>
           `;
@@ -770,10 +709,7 @@ export class ReportService {
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'),
-          this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity',
-          ),
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
         )
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
@@ -794,7 +730,6 @@ export class ReportService {
         })
         .groupBy(
           'item.id',
-          'item_type.name',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
@@ -831,19 +766,19 @@ export class ReportService {
           this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
           this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0)) as total_actual_quantity',
+            'SUM(COALESCE(sell_item.quantity, 0)) as total_sell_quantity',
           ),
           this.knex.raw(
-            'SUM(item.item_purchase_price * item.quantity) as total_item_purchase_price',
+            'SUM(item.item_purchase_price * item.quantity) as total_purchase_price',
           ),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+            'SUM(COALESCE(sell_item.quantity, 0) * item.item_sell_price) as total_sell_price',
           ),
           this.knex.raw(
             'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .where(function () {
           if (filter && filter != '') {
@@ -874,15 +809,12 @@ export class ReportService {
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
-          this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
-          ),
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
         )
-        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
         .andWhere(function () {
           this.where('sell_item.deleted', false).orWhereNull(
@@ -891,21 +823,19 @@ export class ReportService {
         })
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
-              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .groupBy(
-          'item.id', // Group by item.id
-          'item_type.name',
+          'item.id',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
-        ) // Grouping at the item level
+        )
         .orderBy('item.id', 'desc');
 
       return item;
@@ -923,30 +853,28 @@ export class ReportService {
           this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
           this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0)) as total_actual_quantity',
+            'SUM(COALESCE(sell_item.quantity, 0)) as total_sell_quantity',
           ),
           this.knex.raw(
-            'SUM(item.item_purchase_price * item.quantity) as total_item_purchase_price',
+            'SUM(item.item_purchase_price * item.quantity) as total_purchase_price',
           ),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+            'SUM(COALESCE(sell_item.quantity, 0) * item.item_sell_price) as total_sell_price',
           ),
           this.knex.raw(
             'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .where(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhere('item.barcode', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .andWhere('item.deleted', false)
@@ -977,15 +905,12 @@ export class ReportService {
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
-          this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
-          ),
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
         )
-        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
         .andWhere(function () {
           this.where('sell_item.deleted', false).orWhereNull(
@@ -1000,17 +925,15 @@ export class ReportService {
           }
 
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
-              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .groupBy(
-          'item.id', // Group by item.id
-          'item_type.name',
+          'item.id',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
@@ -1056,16 +979,16 @@ export class ReportService {
       <div class="info_black">
       <div class="infoRight">
   
-        <p>کۆی نرخی کڕاو ${formatMoney(data.info.total_item_purchase_price)}</p>
-        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_actual_quantity_price)}</p>
+        <p>کۆی نرخی کڕاو ${formatMoney(data.info.total_purchase_price)}</p>
+        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_sell_price)}</p>
         <p>تێچوو  ${formatMoney(data.info.total_cost)}</p>
 
       </div>
       <div class="infoLeft">
       <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
         <p>کۆی دانەی کڕاو ${formatMoney(data.info.total_item_quantity)}</p>
-        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_actual_quantity)}</p>
-            <p>کۆی دانەی ماوە ${formatMoney(data.info.total_item_quantity - data.info.total_actual_quantity)}</p>
+        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_sell_quantity)}</p>
+            <p>کۆی دانەی ماوە ${formatMoney(data.info.total_item_quantity - data.info.total_sell_quantity)}</p>
         
       </div>
       
@@ -1096,8 +1019,8 @@ export class ReportService {
         return `
        <tr>
           <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
-          <td>${formatMoney(val.actual_quantity)}</td>
-          <td>${formatMoney(val.total_quantity)}</td>
+          <td>${formatMoney(val.quantity - val.sell_quantity)}</td>
+          <td>${formatMoney(val.sell_quantity)}</td>
           <td>${formatMoney(val.item_sell_price)}</td>
           <td>${formatMoney(val.quantity)}</td>
           <td>${formatMoney(val.item_purchase_price)}</td>
@@ -1148,15 +1071,12 @@ export class ReportService {
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
-          this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
-          ),
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
         )
-        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
         .andWhere(function () {
           this.where('sell_item.deleted', false).orWhereNull(
@@ -1171,14 +1091,14 @@ export class ReportService {
           }
         })
         .groupBy(
-          'item.id', // Group by item.id
+          'item.id',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
-        ) // Grouping at the item level
+        )
         .andWhereRaw(
           'item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= 0',
-        ) // Filter for actual_quantity = 0
+        )
 
         .orderBy('item.id', 'desc')
         .offset((page - 1) * limit)
@@ -1212,36 +1132,36 @@ export class ReportService {
           this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
           this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0)) as total_actual_quantity',
+            'SUM(COALESCE(sell_item.quantity, 0)) as total_sell_quantity',
           ),
           this.knex.raw(
-            'SUM(item.item_purchase_price * item.quantity) as total_item_purchase_price',
+            'SUM(item.item_purchase_price * item.quantity) as total_purchase_price',
           ),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+            'SUM(COALESCE(sell_item.quantity, 0) * item.item_sell_price) as total_sell_price',
           ),
           this.knex.raw(
             'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
-        .where('item.deleted', false)
-        .andWhere(function () {
-          this.where('sell_item.deleted', false).orWhereNull(
-            'sell_item.deleted',
-          );
-        })
-        .andWhere(function () {
+        .where(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
           }
         })
+        .andWhere('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
         .andWhereRaw(
           'item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= 0',
-        ); // Filter for actual_quantity = 0
+        );
 
       return itemData[0];
     } catch (error) {
@@ -1258,15 +1178,12 @@ export class ReportService {
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum the quantity
-          this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Calculate actual quantity
-          ),
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
         )
-        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Correct join between item and sell_item
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
         .andWhere(function () {
           this.where('sell_item.deleted', false).orWhereNull(
@@ -1275,12 +1192,10 @@ export class ReportService {
         })
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
-
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
@@ -1310,30 +1225,28 @@ export class ReportService {
           this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
           this.knex.raw('SUM(item.quantity) as total_item_quantity'),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0)) as total_actual_quantity',
+            'SUM(COALESCE(sell_item.quantity, 0)) as total_sell_quantity',
           ),
           this.knex.raw(
-            'SUM(item.item_purchase_price * item.quantity) as total_item_purchase_price',
+            'SUM(item.item_purchase_price * item.quantity) as total_purchase_price',
           ),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0) * item.item_purchase_price) as total_actual_quantity_price',
+            'SUM(COALESCE(sell_item.quantity, 0) * item.item_sell_price) as total_sell_price',
           ),
           this.knex.raw(
             'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .where(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhere('item.barcode', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhere('item.name', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .andWhere('item.deleted', false)
@@ -1344,7 +1257,8 @@ export class ReportService {
         })
         .andWhereRaw(
           'item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= 0',
-        ); // Filter for actual_quantity = 0
+        )
+        .groupBy('item.id');
 
       return itemData[0];
     } catch (error) {
@@ -1365,19 +1279,20 @@ export class ReportService {
           'item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_item_price
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'item.id', 'sell_item.item_id') // Join sell_item to sum the prices
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
-        .andWhere('sell_item.deleted', false)
-        .andWhere('sell_item.self_deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
         .andWhere(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -1386,13 +1301,11 @@ export class ReportService {
           }
 
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
-
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .groupBy(
@@ -1403,7 +1316,7 @@ export class ReportService {
         )
         .andWhereRaw(
           'item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= 0',
-        ) // Filter for actual_quantity = 0
+        )
         .orderBy('item.id', 'desc');
 
       let info = !search
@@ -1442,18 +1355,18 @@ export class ReportService {
     <p class="username">ڕاپۆرتی  جەردی کاڵا - تەواوبوو</p>
 
       <div class="info_black">
-      <div class="infoRight">
+         <div class="infoRight">
   
-        <p>کۆی نرخی کڕاو ${formatMoney(data.info.total_item_purchase_price)}</p>
-        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_actual_quantity_price)}</p>
+        <p>کۆی نرخی کڕاو ${formatMoney(data.info.total_purchase_price)}</p>
+        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_sell_price)}</p>
         <p>تێچوو  ${formatMoney(data.info.total_cost)}</p>
 
       </div>
-      <div class="infoLeft">
+     <div class="infoLeft">
       <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
         <p>کۆی دانەی کڕاو ${formatMoney(data.info.total_item_quantity)}</p>
-        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_actual_quantity)}</p>
-            <p>کۆی دانەی ماوە ${formatMoney(data.info.total_item_quantity - data.info.total_actual_quantity)}</p>
+        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_sell_quantity)}</p>
+            <p>کۆی دانەی ماوە ${formatMoney(data.info.total_item_quantity - data.info.total_sell_quantity)}</p>
         
       </div>
       
@@ -1484,8 +1397,8 @@ export class ReportService {
         return `
        <tr>
           <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
-          <td>${formatMoney(val.actual_quantity)}</td>
-          <td>${formatMoney(val.total_quantity)}</td>
+          <td>${formatMoney(val.quantity - val.sell_quantity)}</td>
+          <td>${formatMoney(val.sell_quantity)}</td>
           <td>${formatMoney(val.item_sell_price)}</td>
           <td>${formatMoney(val.quantity)}</td>
           <td>${formatMoney(val.item_purchase_price)}</td>
@@ -1540,12 +1453,12 @@ export class ReportService {
           'item.id as item_id',
           'item.name as item_name',
           'user.username as created_by',
-          'item_type.id as type_id', // Get item_type_id
-          'item_type.name as type_name', // Get item_type_name
+          'item_type.id as type_id',
+          'item_type.name as type_name',
         )
-        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id') // Join for created_by
-        .leftJoin('item', 'item_quantity_history.item_id', 'item.id') // Join with item_type to get type name
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type
+        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id')
+        .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where(function () {
           this.where('item.deleted', false).orWhereNull('item.deleted');
         })
@@ -1565,13 +1478,6 @@ export class ReportService {
             ]);
           }
         })
-        .groupBy(
-          'item_quantity_history.id',
-          'item.id', // Group by item.id
-          'user.username',
-          'item_type.id', // Group by item_type.id
-        ) // Grouping at the item level
-
         .orderBy('item_quantity_history.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -1614,15 +1520,14 @@ export class ReportService {
             'SUM(item_quantity_history.quantity) as total_item_quantity',
           ),
           this.knex.raw(
-            'SUM(item_quantity_history.item_purchase_price) as total_item_purchase_price',
+            'SUM(item_quantity_history.item_purchase_price) as total_purchase_price',
           ),
           this.knex.raw(
             'SUM(COALESCE(item_quantity_history.quantity, 0) * item_quantity_history.item_purchase_price) as total_cost',
           ),
         )
         .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type
-
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
         .andWhere(function () {
           if (filter && filter != '') {
@@ -1658,18 +1563,17 @@ export class ReportService {
           'item.id as item_id',
           'item.name as item_name',
           'user.username as created_by',
-          'item_type.id as type_id', // Get item_type_id
-          'item_type.name as type_name', // Get item_type_name
+          'item_type.id as type_id',
+          'item_type.name as type_name',
         )
-        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id') // Join for created_by
-        .leftJoin('item', 'item_quantity_history.item_id', 'item.id') // Join with item_type to get type name
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type
+        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id')
+        .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where(function () {
           this.where('item.deleted', false).orWhereNull('item.deleted');
         })
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('user.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
@@ -1679,13 +1583,6 @@ export class ReportService {
               ]);
           }
         })
-        .groupBy(
-          'item_quantity_history.id',
-          'item.id', // Group by item.id
-          'user.username',
-          'item_type.id', // Group by item_type.id
-        ) // Grouping at the item level
-
         .orderBy('item_quantity_history.id', 'desc');
 
       return items;
@@ -1709,7 +1606,7 @@ export class ReportService {
             'SUM(item_quantity_history.quantity) as total_item_quantity',
           ),
           this.knex.raw(
-            'SUM(item_quantity_history.item_purchase_price) as total_item_purchase_price',
+            'SUM(item_quantity_history.item_purchase_price) as total_purchase_price',
           ),
           this.knex.raw(
             'SUM(COALESCE(item_quantity_history.quantity, 0) * item_quantity_history.item_purchase_price) as total_cost',
@@ -1720,7 +1617,6 @@ export class ReportService {
         .where('item.deleted', false)
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('user.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
@@ -1756,12 +1652,12 @@ export class ReportService {
           'item.id as item_id',
           'item.name as item_name',
           'user.username as created_by',
-          'item_type.id as type_id', // Get item_type_id
-          'item_type.name as type_name', // Get item_type_name
+          'item_type.id as type_id',
+          'item_type.name as type_name',
         )
-        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id') // Join for created_by
-        .leftJoin('item', 'item_quantity_history.item_id', 'item.id') // Join with item_type to get type name
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type
+        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id')
+        .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where(function () {
           this.where('item.deleted', false).orWhereNull('item.deleted');
         })
@@ -1782,22 +1678,16 @@ export class ReportService {
             ]);
           }
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('user.username', 'ilike', `%${search}%`)
               .orWhereRaw('CAST(item_quantity_history.id AS TEXT) ILIKE ?', [
                 `%${search}%`,
               ])
               .orWhere('item.barcode', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy(
-          'item_quantity_history.id',
-          'item.id', // Group by item.id
-          'user.username',
-          'item_type.id', // Group by item_type.id
-        ) // Group by item and user fields
+
         .orderBy('item_quantity_history.id', 'desc');
 
       let info = !search
@@ -1846,7 +1736,7 @@ ${pdfStyle}
     </div>
     <div class="infoLeft">
     <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
-      <p>کۆی  نرخی کڕین ${formatMoney(data.info.total_item_purchase_price)}</p>
+      <p>کۆی  نرخی کڕین ${formatMoney(data.info.total_purchase_price)}</p>
     
       
     </div>
@@ -1916,18 +1806,18 @@ ${pdfStyle}
       const sell: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_sell_price
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
+          ),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_item_purchase_price',
-          ), // Sum of item_purchase_price
+            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_purchase_price',
+          ),
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id') // Join sell_item to sum the prices
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
+        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .where('sell.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
@@ -1938,7 +1828,7 @@ ${pdfStyle}
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username') // Group by sell and user fields
+        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -1963,27 +1853,24 @@ ${pdfStyle}
     }
   }
 
-  async getBillProfitInformation(from: From, to: To): Promise<any> {
+  async getBillProfitInformation(
+    from: From,
+    to: To,
+  ): Promise<BillProfitReportInfo> {
     try {
-      let discountData: any = await this.knex<Sell>('sell')
-        .select(this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'))
-        .where(function () {
-          if (from !== '' && from && to !== '' && to) {
-            const fromDate = timestampToDateString(Number(from));
-            const toDate = timestampToDateString(Number(to));
-            this.whereBetween('created_at', [fromDate, toDate]);
-          }
-        })
-        .andWhere('deleted', false);
       const sellData: any = await this.knex<Sell>('sell')
         .select(
+          this.knex.raw('COALESCE(SUM(discount), 0) as total_sell_discount'),
           this.knex.raw('COUNT(DISTINCT sell.id) as sell_count'),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
           ),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_item_purchase_price',
-          ), // Sum of item_purchase_price
+            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_purchase_price',
+          ),
+          this.knex.raw(
+            'SUM((sell_item.item_sell_price - sell_item.item_purchase_price) * sell_item.quantity) as total_profit',
+          ),
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
 
@@ -1998,10 +1885,7 @@ ${pdfStyle}
         .andWhere('sell_item.self_deleted', false)
         .andWhere('sell.deleted', false);
 
-      return {
-        sellData: sellData[0],
-        discountData: discountData[0].total_discount,
-      };
+      return sellData[0];
     } catch (error) {
       throw new Error(error.message);
     }
@@ -2012,30 +1896,29 @@ ${pdfStyle}
       const sell: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_sell_price
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
+          ),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_item_purchase_price',
-          ), // Sum of item_purchase_price
+            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_purchase_price',
+          ),
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id') // Join sell_item to sum the prices
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
+        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .where('sell.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username') // Group by sell and user fields
+        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc');
 
       return sell;
@@ -2044,71 +1927,67 @@ ${pdfStyle}
     }
   }
 
-  async getBillProfitInformationSearch(search: Search): Promise<any> {
+  async getBillProfitInformationSearch(
+    search: Search,
+  ): Promise<BillProfitReportInfo> {
     try {
-      let discountData: any = await this.knex<Sell>('sell')
-        .select(this.knex.raw('COALESCE(SUM(discount), 0) as total_discount'))
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .where(function () {
-          if (search && search !== '') {
-            // Searching by the username of the created user
-            this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
-          }
-        })
-        .andWhere('sell.deleted', false);
       const sellData: any = await this.knex<Sell>('sell')
         .select(
+          this.knex.raw('COALESCE(SUM(discount), 0) as total_sell_discount'),
           this.knex.raw('COUNT(DISTINCT sell.id) as sell_count'),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
           ),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_item_purchase_price',
-          ), // Sum of item_purchase_price
+            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_purchase_price',
+          ),
+          this.knex.raw(
+            'SUM((sell_item.item_sell_price - sell_item.item_purchase_price) * sell_item.quantity) as total_profit',
+          ),
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') //
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .where(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere('sell.deleted', false);
-      return {
-        sellData: sellData[0],
-        discountData: discountData[0]?.total_discount,
-      };
+      return sellData[0];
     } catch (error) {
       throw new Error(error.message);
     }
   }
 
-  async billProfitPrintData(search: Search, from: From, to: To): Promise<any> {
+  async billProfitPrintData(
+    search: Search,
+    from: From,
+    to: To,
+  ): Promise<{
+    sell: Sell[];
+    info: BillProfitReportInfo;
+  }> {
     try {
       const sell: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_sell_price
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
+          ),
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_item_purchase_price',
-          ), // Sum of item_purchase_price
+            'COALESCE(SUM(sell_item.item_purchase_price * sell_item.quantity), 0) as total_purchase_price',
+          ),
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id') // Join sell_item to sum the prices
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
+        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
         .where('sell.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
@@ -2119,13 +1998,12 @@ ${pdfStyle}
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username') // Group by sell and user fields
+        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc');
 
       let info = !search
@@ -2142,160 +2020,86 @@ ${pdfStyle}
     search: Search,
     from: From,
     to: To,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
       let data = await this.billProfitPrintData(search, from, to);
-      const browser = await puppeteer.launch({
-        // executablePath:
-        //   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-        dumpio: true,
-      });
-      const page = await browser.newPage();
 
-      await page.setViewport({ width: 1080, height: 1024 });
-
+      let { browser, page } = await generatePuppeteer({});
       const htmlContent = `
     <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display:flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            font-family:Calibri;
+<html lang="en">
+<head>
+${pdfStyle}
+</head>
 
-          }
-          .info {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .infoRight {
-            text-align: right;
-          
-          }
-          .infoLeft {
-            text-align: right;
-          }
-          .username {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            margin-top: 30px;
-            line-height: 1.3;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            
-          }
-          th, td {
-            border: 1px solid black;
-    
-            text-align: center;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-left: 5px;
-            padding-right: 5px;
-            white-space: pre-wrap;
-            
-          }
-          th {
-            background-color: black;
-            padding-left: 5px;
-            padding-right: 5px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-          }
-        
-        </style>
-      </head>
-      <body>
-       
-     
+<body>
+  <p class="username">ڕاپۆرتی قازانجی پسوڵە </p>
 
+    <div class="info_black">
+      <div class="infoRight">
+      <p>کۆی داشکاندنی پسوڵە ${formatMoney(data.info.total_sell_discount)}</p>
+      <p>کۆی دوای داشکاندن ${formatMoney(data.info.total_sell_price - data.info.total_sell_discount)}</p>
+      <p>کۆی قازانج ${formatMoney(data.info.total_profit)}</p>
+    </div>
+    <div class="infoLeft">
+       <p>کۆی پسوڵە ${formatMoney(data.info.sell_count)}</p>
+      <p>کۆی گشتی پسوڵە ${formatMoney(data.info.total_sell_price)}</p>
+   
+    </div>
+  
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>کۆی قازانجی پسوڵە</th>
+        <th>نرخی دوای داشکاندن</th>
+        <th>داشکاندن</th>
+        <th>کۆی گشتی</th>
+        <th>بەروار</th>
+        <th>ژ.وەصڵ</th>
+      </tr>
+    </thead>
+    <tbody id="table-body">
+    ${data.sell.map((val: BillProfitReportData, _index: number) => {
+      return `
+     <tr>
+         <td>${formatMoney(val.total_sell_price - val.discount - val.total_purchase_price)}</td>
+         <td>${formatMoney(val.total_sell_price - val.discount)}</td>
+         <td>${formatMoney(val.discount)}</td>
+          <td>${formatMoney(val.total_sell_price)}</td>
+          <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+          <td>${val.id}</td>
+     </tr>
+        `;
+    })}
+    </tbody>
+  </table>
+<div class="info_black">
+    <div class="infoLeft">
+      <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+    </div>
+    <div class="infoRight">
+      <p>${user.username} چاپکراوە لەلایەن</p>
+    </div>
+  </div>
+</body>
+</html>
 
-
-            <p class="username">ڕاپۆرتی فرۆشتن
-            </p>
-
-            <div class="info">
-            <div class="infoLeft">
-                <p>${formatTimestampToDate(
-                  parseInt(data.sell.created_at),
-                )} بەروار</p>
-                <p>${data.sell.id} ر.وصل</p>
-            </div>
-            <div class="infoRight">
-             
-            </div>
-          </div>
-       
-
-
-
-     
-      </div>
-        <table>
-          <thead>
-            <tr>
-              <th>چاککار</th>
-              <th>داغڵکار</th>
-              <th>نرخ دوای داشکان</th>
-              <th>داشکاندن</th>
-              <th>کۆی گشتی</th>
-              <th>بەروار  </th>
-              <th>ژ.وەصڵ</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.sell
-              .map(
-                (one_sell, index) => `
-              <tr>
-                <td>${one_sell.updated_by}</td>
-                <td>${one_sell.created_by}</td>
-                <td>${one_sell.total_item_sell_price - one_sell.discount}</td>
-                <td>${one_sell.discount}</td>
-                <td>${one_sell.total_item_sell_price}</td>
-                <td>${one_sell.created_at}</td>
-                <td>${one_sell.id}</td>
-                <td>${index + 1}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+    `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -2314,29 +2118,28 @@ ${pdfStyle}
       const sellItem: SellItem[] = await this.knex<SellItem>('sell_item')
         .select(
           'sell_item.*',
-          'item.*',
+          'item.name as item_name',
+          'item.barcode as item_barcode',
           'sell.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
+        )
 
-        .leftJoin('sell', 'sell_item.sell_id', 'sell.id') // Join sell_item to sum the prices
-        .leftJoin('item', 'sell_item.item_id', 'item.id') // Join sell_item to sum the prices
-
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
+        .leftJoin('item', 'sell_item.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('sell.deleted', false)
         .andWhere('item.deleted', false)
         .andWhere('sell_item.deleted', false)
@@ -2351,21 +2154,9 @@ ${pdfStyle}
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            // Set the toDate to the end of that day
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy(
-          'sell_item.sell_id',
-          'sell_item.item_id',
-          'sell_item.id',
-          'sell.id',
-          'item_type.name',
-          'item_type.id',
-          'item.id',
-          'createdUser.username',
-          'updatedUser.username',
-        ) // Group by sell_id and item_id to avoid duplicate entries
         .orderBy('sell_item.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -2394,23 +2185,28 @@ ${pdfStyle}
     filter: Filter,
     from: From,
     to: To,
-  ): Promise<any> {
+  ): Promise<ItemProfitReportInfo> {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
-          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
-          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
-          this.knex.raw(
-            'SUM(sell_item.item_sell_price * sell_item.quantity) as total_price',
-          ), // Sum of item_sell_price
+          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'),
+          this.knex.raw('SUM(sell_item.quantity) as total_quantity'),
+          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'),
+
           this.knex.raw(
             'SUM(sell_item.item_purchase_price) as total_purchase_price',
-          ), // Sum of quantities
+          ),
+          this.knex.raw(
+            'SUM(sell_item.item_sell_price) - SUM(sell_item.item_purchase_price) as total_single_profit',
+          ),
+          this.knex.raw(
+            'SUM((sell_item.item_sell_price - sell_item.item_purchase_price) * sell_item.quantity) as total_profit',
+          ),
         )
 
         .leftJoin('item', 'item.id', 'sell_item.item_id') // Join with item table
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+
         .where(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -2438,49 +2234,41 @@ ${pdfStyle}
       const item: SellItem[] = await this.knex<SellItem>('sell_item')
         .select(
           'sell_item.*',
-          'item.*',
+          'item.name as item_name',
+          'item.barcode as item_barcode',
           'sell.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
           'createdUser.username as created_by',
           'updatedUser.username as updated_by',
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of the quantity for the grouped items
         )
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
-        .leftJoin('sell', 'sell_item.sell_id', 'sell.id') // Join sell_item to sell
-        .leftJoin('item', 'sell_item.item_id', 'item.id') // Join sell_item to item
-        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
+        )
+        .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
+        .leftJoin('item', 'sell_item.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('sell.deleted', false)
         .andWhere('item.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
-                `%${search}%`,
-              ]); // Search by item id
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy(
-          'sell_item.id',
-          'item.id',
-          'sell.id',
-          'item_type.id',
-          'createdUser.username',
-          'updatedUser.username',
-        ) // Group by necessary fields to avoid aggregation issues
+
         .orderBy('sell_item.id', 'desc');
 
       return item;
@@ -2489,40 +2277,46 @@ ${pdfStyle}
     }
   }
 
-  async getItemProfitInformationSearch(search: Search): Promise<any> {
+  async getItemProfitInformationSearch(
+    search: Search,
+  ): Promise<ItemProfitReportInfo> {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
-          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'), // Count total sell_items
-          this.knex.raw('SUM(sell_item.quantity) as total_quantity'), // Sum of quantities
-          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'), // Sum of quantities
-          this.knex.raw(
-            'SUM(sell_item.item_sell_price * sell_item.quantity) as total_price',
-          ), // Sum of quantities
+          this.knex.raw('COUNT(DISTINCT sell_item.id) as total_count'),
+          this.knex.raw('SUM(sell_item.quantity) as total_quantity'),
+          this.knex.raw('SUM(sell_item.item_sell_price) as total_sell_price'),
+
           this.knex.raw(
             'SUM(sell_item.item_purchase_price) as total_purchase_price',
-          ), // Sum of quantities
+          ),
+          this.knex.raw(
+            'SUM(sell_item.item_sell_price) - SUM(sell_item.item_purchase_price) as total_single_profit',
+          ),
+          this.knex.raw(
+            'SUM((sell_item.item_sell_price - sell_item.item_purchase_price) * sell_item.quantity) as total_profit',
+          ),
         )
-        .leftJoin('item', 'item.id', 'sell_item.item_id') // Join with item table
+        .leftJoin('item', 'item.id', 'sell_item.item_id')
+        .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
+        )
 
         .where(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
-                `%${search}%`,
-              ]); // Search by item id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
 
@@ -2540,26 +2334,39 @@ ${pdfStyle}
     search: Search,
     from: From,
     to: To,
-  ): Promise<any> {
+  ): Promise<{
+    item: SellItem[];
+    info: ItemProfitReportInfo;
+  }> {
     try {
-      const item: Item[] = await this.knex<Item>('item')
+      const item: SellItem[] = await this.knex<SellItem>('sell_item')
         .select(
-          'item.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw(
-            'COALESCE(SUM(item_item.item_item_price * item_item.quantity), 0) as total_item_item_price',
-          ), // Sum of item_item_price
-          this.knex.raw(
-            'SUM(sell_item.item_purchase_price) as total_purchase_price',
-          ), // Sum of quantities
+          'sell_item.*',
+          'item.name as item_name',
+          'item.barcode as item_barcode',
+          'sell.*',
+          'item_type.id as type_id',
+          'item_type.name as type_name',
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_item', 'item.id', 'item_item.item_id') // Join item_item to sum the prices
-        .where('item.deleted', false)
-        .andWhere('item_item.deleted', false)
-        .andWhere('item_item.self_deleted', false)
+        .leftJoin(
+          'user as createdUser',
+          'sell_item.created_by',
+          'createdUser.id',
+        )
+        .leftJoin(
+          'user as updatedUser',
+          'sell_item.updated_by',
+          'updatedUser.id',
+        )
+        .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
+        .leftJoin('item', 'sell_item.item_id', 'item.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .where('sell.deleted', false)
+        .andWhere('item.deleted', false)
+        .andWhere('sell_item.deleted', false)
+        .andWhere('sell_item.self_deleted', false)
         .andWhere(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -2569,16 +2376,17 @@ ${pdfStyle}
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('item.created_at', [fromDate, toDate]);
+            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
           if (search && search !== '') {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy('item.id', 'createdUser.username', 'updatedUser.username') // Group by item and user fields
         .orderBy('item.id', 'desc');
 
       let info = !search
@@ -2596,160 +2404,101 @@ ${pdfStyle}
     search: Search,
     from: From,
     to: To,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
-      let data = await this.itemProfitPrintData(filter, search, from, to);
-      const browser = await puppeteer.launch({
-        executablePath:
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-      });
-      const page = await browser.newPage();
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
 
-      await page.setViewport({ width: 1080, height: 1024 });
+      let data = await this.itemProfitPrintData(filter, search, from, to);
+
+      let { browser, page } = await generatePuppeteer({});
 
       const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display:flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            font-family:Calibri;
+      <!DOCTYPE html>
+<html lang="en">
+  <head>
+ ${pdfStyle}
+  </head>
 
-          }
-          .info {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .infoRight {
-            text-align: right;
-          
-          }
-          .infoLeft {
-            text-align: right;
-          }
-          .username {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            margin-top: 30px;
-            line-height: 1.3;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            
-          }
-          th, td {
-            border: 1px solid black;
-    
-            text-align: center;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-left: 5px;
-            padding-right: 5px;
-            white-space: pre-wrap;
-            
-          }
-          th {
-            background-color: black;
-            padding-left: 5px;
-            padding-right: 5px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-          }
-        
-        </style>
-      </head>
-      <body>
-       
-     
+  <body>
+    <p class="username">ڕاپۆرتی قازانجی کاڵا</p>
 
-
-
-            <p class="username">ڕاپۆرتی فرۆشتن
-            </p>
-
-            <div class="info">
-            <div class="infoLeft">
-                <p>${formatTimestampToDate(
-                  parseInt(data.item.created_at),
-                )} بەروار</p>
-                <p>${data.item.id} ر.وصل</p>
-            </div>
-            <div class="infoRight">
-             
-            </div>
-          </div>
-       
-
-
-
-     
+      <div class="info_black">
+         <div class="infoRight">
+        <p>کۆی نرخی کڕاو ${formatMoney(data.info.total_purchase_price)}</p>
+        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_sell_price)}</p>
+             <p>کۆی قازانجی دانە ${formatMoney(data.info.total_purchase_price - data.info.total_sell_price)}</p>
       </div>
-        <table>
-          <thead>
-            <tr>
-              <th>چاککار</th>
-              <th>داغڵکار</th>
-              <th>نرخ دوای داشکان</th>
-              <th>داشکاندن</th>
-              <th>کۆی گشتی</th>
-              <th>بەروار  </th>
-              <th>ژ.وەصڵ</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.item
-              .map(
-                (one_item, index) => `
-              <tr>
-                <td>${one_item.updated_by}</td>
-                <td>${one_item.created_by}</td>
-                <td>${one_item.total_item_item_price - one_item.discount}</td>
-                <td>${one_item.discount}</td>
-                <td>${one_item.total_item_item_price}</td>
-                <td>${one_item.created_at}</td>
-                <td>${one_item.id}</td>
-                <td>${index + 1}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+      <div class="infoLeft">
+          <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
+        <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_quantity)}</p>
+   
+        <p>کۆی گشتی قازانج ${formatMoney(data.info.total_profit)}</p>
+
+    
+      </div>
+   
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>بەروار</th>
+          <th>کۆی قازانج</th>
+          <th>قازانجی دانە</th>
+
+          <th>نرخی کڕین</th>
+
+          <th>نرخی فرۆشتن</th>
+
+          <th>دانەی فرۆشراو</th>
+          <th>جۆری کالا</th>
+          <th>بارکۆد</th>
+          <th>ناوی کاڵا</th>
+          <th>ژ.وەصڵ</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      ${data.item.map((val: ItemProfitReportData, _index: number) => {
+        return `
+       <tr>
+          <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+           <td>${formatMoney((val.item_sell_price - val.item_purchase_price) * val.quantity)}</td>
+          <td>${formatMoney(val.item_sell_price - val.item_purchase_price)}</td>
+          <td>${formatMoney(val.item_purchase_price)}</td>
+          <td>${formatMoney(val.item_sell_price)}</td>
+          <td>${formatMoney(val.quantity)}</td>
+          <td>${val.type_name}</td>
+          <td>${val.item_barcode}</td>
+          <td>${val.item_name}</td>
+          <td>${val.sell_id}</td>
+       </tr>
+          `;
+      })}
+      </tbody>
+    </table>
+  <div class="info_black">
+      <div class="infoLeft">
+        <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+      </div>
+      <div class="infoRight">
+        <p>${user.username} چاپکراوە لەلایەن</p>
+      </div>
+    </div>
+  </body>
+</html>
+
+      `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true, // Ensures backgrounds are printed
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -2770,14 +2519,14 @@ ${pdfStyle}
           'expense.*',
           'expense_type.id as type_id',
           'expense_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id')
 
         .leftJoin('expense_type', 'expense.type_id', 'expense_type.id')
-
+        .where('expense.deleted', false)
         .andWhere(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(expense_type.id AS TEXT) ILIKE ?', [
@@ -2787,17 +2536,9 @@ ${pdfStyle}
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            // Set the toDate to the end of that day
             this.whereBetween('expense.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy(
-          'expense_type.name',
-          'expense_type.id',
-          'expense.id',
-          'createdUser.username',
-          'updatedUser.username',
-        ) // Group by sell_id and item_id to avoid duplicate entries
         .orderBy('expense.id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -2826,14 +2567,12 @@ ${pdfStyle}
     filter: Filter,
     from: From,
     to: To,
-  ): Promise<any> {
+  ): Promise<ExpenseReportInfo> {
     try {
       const itemData: any = await this.knex<Expense>('expense')
-        .select(
-          this.knex.raw('SUM(expense.price) as total_price'), // Sum of quantities
-        )
-
-        .leftJoin('expense_type', 'expense.type_id', 'expense_type.id') // Join with expense_type to get type name
+        .select(this.knex.raw('SUM(expense.price) as total_price'))
+        .leftJoin('expense_type', 'expense.type_id', 'expense_type.id')
+        .where('expense.deleted', false)
         .where(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(expense_type.id AS TEXT) ILIKE ?', [
@@ -2846,7 +2585,6 @@ ${pdfStyle}
             this.whereBetween('expense.created_at', [fromDate, toDate]);
           }
         })
-
         .andWhere('expense.deleted', false);
 
       return itemData[0];
@@ -2862,28 +2600,21 @@ ${pdfStyle}
           'expense.*',
           'expense_type.id as type_id',
           'expense_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id')
+        .where('expense.deleted', false)
 
         .leftJoin('expense_type', 'expense.type_id', 'expense_type.id')
         .andWhere(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(expense.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(expense.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
-        .groupBy(
-          'expense_type.name',
-          'expense_type.id',
-          'expense.id',
-          'createdUser.username',
-          'updatedUser.username',
-        ) // Group by sell_id and item_id to avoid duplicate entries
         .orderBy('expense.id', 'desc');
 
       return expense;
@@ -2892,23 +2623,23 @@ ${pdfStyle}
     }
   }
 
-  async getExpenseInformationSearch(search: Search): Promise<any> {
+  async getExpenseInformationSearch(
+    search: Search,
+  ): Promise<ExpenseReportInfo> {
     try {
       const itemData: any = await this.knex<Expense>('expense')
-        .select(
-          this.knex.raw('SUM(expense.price) as total_price'), // Sum of quantities
-        )
+        .select(this.knex.raw('SUM(expense.price) as total_price'))
 
-        .leftJoin('expense_type', 'expense.type_id', 'expense_type.id') // Join with expense_type to get type name
-        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('expense_type', 'expense.type_id', 'expense_type.id')
+        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id')
+        .where('expense.deleted', false)
 
         .where(function () {
           if (search && search !== '') {
-            // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(expense.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(expense.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .andWhere('expense.deleted', false);
@@ -2924,49 +2655,50 @@ ${pdfStyle}
     search: Search,
     from: From,
     to: To,
-  ): Promise<any> {
+  ): Promise<{
+    info: ExpenseReportInfo;
+    expense: Expense[];
+  }> {
     try {
-      const item: Item[] = await this.knex<Item>('item')
+      const expense: Expense[] = await this.knex<Expense>('expense')
         .select(
-          'item.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw(
-            'COALESCE(SUM(item_item.item_item_price * item_item.quantity), 0) as total_item_item_price',
-          ), // Sum of item_item_price
+          'expense.*',
+          'expense_type.id as type_id',
+          'expense_type.name as type_name',
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_item', 'item.id', 'item_item.item_id') // Join item_item to sum the prices
-        .where('item.deleted', false)
-        .andWhere('item_item.deleted', false)
-        .andWhere('item_item.self_deleted', false)
+        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id')
+
+        .leftJoin('expense_type', 'expense.type_id', 'expense_type.id')
+        .where('expense.deleted', false)
+
         .andWhere(function () {
           if (filter && filter != '') {
-            this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
+            this.whereRaw('CAST(expense_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
           }
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('item.created_at', [fromDate, toDate]);
+            this.whereBetween('exepnse.created_at', [fromDate, toDate]);
           }
           if (search && search !== '') {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(exepnse.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by expense id
           }
         })
-        .groupBy('item.id', 'createdUser.username', 'updatedUser.username') // Group by item and user fields
-        .orderBy('item.id', 'desc');
+        .orderBy('expense.id', 'desc');
 
       let info = !search
         ? await this.getItemInformation(filter, from, to)
         : await this.getItemInformationSearch(search);
 
-      return { item, info };
+      return { expense, info };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -2977,160 +2709,80 @@ ${pdfStyle}
     search: Search,
     from: From,
     to: To,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
       let data = await this.expensePrintData(filter, search, from, to);
-      const browser = await puppeteer.launch({
-        executablePath:
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Use system Chrome
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-      });
-      const page = await browser.newPage();
 
-      await page.setViewport({ width: 1080, height: 1024 });
-
+      let { browser, page } = await generatePuppeteer({});
       const htmlContent = `
       <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 20px;
-              display:flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              line-height: 1;
-              font-family:Calibri;
-  
-            }
-            .info {
-              display: flex;
-              flex-direction: row;
-              justify-content: space-between;
-              width: 100%;
-            }
-            .infoRight {
-              text-align: right;
-            
-            }
-            .infoLeft {
-              text-align: right;
-            }
-            .username {
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-              font-size: 20px;
-              margin-top: 30px;
-              line-height: 1.3;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-              
-            }
-            th, td {
-              border: 1px solid black;
+<html lang="en">
+  <head>
+ ${pdfStyle}
+  </head>
+
+  <body>
+    <p class="username">ڕاپۆرتی خەرجی</p>
+
+      <div class="info_black">
+        <div class="infoRight">
+ 
+      </div>
+      <div class="infoLeft">
+         <p>کۆی خەرجی ${formatMoney(data.info.total_price)}</p>
+     
+      </div>
+    
+    </div>
+    <table>
+      <thead>
+        <tr>
       
-              text-align: center;
-              padding-top: 20px;
-              padding-bottom: 20px;
-              padding-left: 5px;
-              padding-right: 5px;
-              white-space: pre-wrap;
-              
-            }
-            th {
-              background-color: black;
-              padding-left: 5px;
-              padding-right: 5px;
-              padding-top: 20px;
-              padding-bottom: 20px;
-            }
+          <th>بەروار</th>
+          <th>بڕی خەرجکراو</th>
+          <th>جۆری خەرجی</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      ${data.expense.map((val: ExpenseReportData, _index: number) => {
+        return `
+       <tr>
           
-          </style>
-        </head>
-        <body>
-         
-       
-  
-  
-  
-              <p class="username">ڕاپۆرتی فرۆشتن
-              </p>
-  
-              <div class="info">
-              <div class="infoLeft">
-                  <p>${formatTimestampToDate(
-                    parseInt(data.item.created_at),
-                  )} بەروار</p>
-                  <p>${data.item.id} ر.وصل</p>
-              </div>
-              <div class="infoRight">
-               
-              </div>
-            </div>
-         
-  
-  
-  
-       
-        </div>
-          <table>
-            <thead>
-              <tr>
-                <th>چاککار</th>
-                <th>داغڵکار</th>
-                <th>نرخ دوای داشکان</th>
-                <th>داشکاندن</th>
-                <th>کۆی گشتی</th>
-                <th>بەروار  </th>
-                <th>ژ.وەصڵ</th>
-                <th>#</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.item
-                .map(
-                  (one_item, index) => `
-                <tr>
-                  <td>${one_item.updated_by}</td>
-                  <td>${one_item.created_by}</td>
-                  <td>${one_item.total_item_item_price - one_item.discount}</td>
-                  <td>${one_item.discount}</td>
-                  <td>${one_item.total_item_item_price}</td>
-                  <td>${one_item.created_at}</td>
-                  <td>${one_item.id}</td>
-                  <td>${index + 1}</td>
-                </tr>
-              `,
-                )
-                .join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
+                <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+                <td>${formatMoney(val.price)}</td>
+
+                <td>${val.type_name}</td>
+       </tr>
+          `;
+      })}
+      </tbody>
+    </table>
+  <div class="info_black">
+      <div class="infoLeft">
+        <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+      </div>
+      <div class="infoRight">
+        <p>${user.username} چاپکراوە لەلایەن</p>
+      </div>
+    </div>
+  </body>
+</html>
+
+      `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true, // Ensures backgrounds are printed
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -3146,12 +2798,12 @@ ${pdfStyle}
     try {
       const sell: CaseReport[] = await this.knex<SellItem>('sell_item')
         .select(
-          'user.username as created_by', // Alias for created_by user
+          'user.username as created_by',
           'user.id as user_id',
           this.knex.raw(
             'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as sold_price',
-          ), // Sum of item_sell_price
-          this.knex.raw('COALESCE(SUM(sell_item.quantity), 0) as sold'), // Sum of quantities
+          ),
+          this.knex.raw('COALESCE(SUM(sell_item.quantity), 0) as sold'),
         )
         .leftJoin('user', 'sell_item.created_by', 'user.id')
         .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
@@ -3165,8 +2817,8 @@ ${pdfStyle}
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy('user.username', 'user.id') // Group by user fields only
-        .orderBy('sold_price', 'desc') // Order by total_item_sell_price or other relevant fields
+        .groupBy('user.username', 'user.id')
+        .orderBy('sold_price', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
       const { hasNextPage } = await generatePaginationInfo<SellItem>(
@@ -3195,7 +2847,7 @@ ${pdfStyle}
       let itemData: any = await this.knex<SellItem>('sell_item')
         .select(
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
           ), // Sum of item_sell_price
           this.knex.raw(
             'COALESCE(SUM(sell_item.quantity), 0) as total_quantity',
@@ -3257,7 +2909,7 @@ ${pdfStyle}
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
           ), // Sum of item_sell_price
           this.knex.raw(
             'COALESCE(SUM(sell_item.quantity), 0) as total_quantity',
@@ -3288,12 +2940,12 @@ ${pdfStyle}
     try {
       const sell: Sell[] = await this.knex<Sell>('sell')
         .select(
-          'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'user.username as created_by',
+          'user.id as user_id',
           this.knex.raw(
-            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_item_sell_price',
-          ), // Sum of item_sell_price
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as sold_price',
+          ),
+          this.knex.raw('COALESCE(SUM(sell_item.quantity), 0) as sold'),
         )
         .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
@@ -3462,9 +3114,9 @@ ${pdfStyle}
                 <tr>
                   <td>${one_sell.updated_by}</td>
                   <td>${one_sell.created_by}</td>
-                  <td>${one_sell.total_item_sell_price - one_sell.discount}</td>
+                  <td>${one_sell.total_sell_price - one_sell.discount}</td>
                   <td>${one_sell.discount}</td>
-                  <td>${one_sell.total_item_sell_price}</td>
+                  <td>${one_sell.total_sell_price}</td>
                   <td>${one_sell.created_at}</td>
                   <td>${one_sell.id}</td>
                   <td>${index + 1}</td>

@@ -302,9 +302,7 @@ export class ReservationService {
 
       const year = validDate.getFullYear(); // Extract the year
       const month = validDate.getUTCMonth() + 1; // Extract the month (0-based)
-      const day = validDate.getUTCDate(); // Extract the day
-      // Adjust month to be 2-digit format
-      // Adjust month to be 2-digit format
+      const day = validDate.getUTCDate();
       const reservations: Reservation[] = await this.knex<Reservation>(
         'reservation',
       )

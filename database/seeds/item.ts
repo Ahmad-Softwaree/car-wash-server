@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 import { ItemType } from 'database/types';
 import { Knex } from 'knex';
 
-const items = Array.from({ length: 100 }, () => ({
+const items = Array.from({ length: 5 }, () => ({
   name: faker.commerce.productName(),
   barcode: faker.string.alphanumeric(12),
   type_id: null,
