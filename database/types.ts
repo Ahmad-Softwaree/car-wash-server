@@ -256,6 +256,8 @@ export type ItemQuantityHistory = {
   quantity: number;
   item_purchase_price: number;
   item_sell_price: number;
+  item_name: string;
+  item_barcode: string;
   created_at: Date;
   updated_at: Date;
 };

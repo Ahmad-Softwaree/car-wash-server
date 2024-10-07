@@ -70,21 +70,20 @@ export class ItemService {
           'item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity',
           ),
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', (join) => {
           join
             .on('item.id', 'sell_item.item_id')
             .andOn('sell_item.deleted', '=', this.knex.raw('false'));
         })
-
         .where('item.deleted', false)
         .andWhere(function () {
           if (filter != '' && filter) {
@@ -96,18 +95,7 @@ export class ItemService {
             this.whereBetween('item.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy(
-          'item.id', // Include primary key
-          'item.name', // Select specific columns from item
-          'item.type_id',
-          'item.created_at',
-          'item.deleted',
-          'item.quantity',
-          'item_type.id',
-          'item_type.name', // Group by all selected non-aggregated columns
-          'createdUser.username',
-          'updatedUser.username',
-        )
+        .groupBy('item.id', 'item_type.id', 'createdUser.id', 'updatedUser.id')
         .offset((page - 1) * limit)
         .limit(limit)
         .orderBy('item.id', 'desc');
@@ -146,15 +134,15 @@ export class ItemService {
           'item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity',
           ),
         )
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('sell_item', (join) => {
           join
             .on('item.id', 'sell_item.item_id')
@@ -171,18 +159,7 @@ export class ItemService {
             this.whereBetween('item.created_at', [fromDate, toDate]);
           }
         })
-        .groupBy(
-          'item.id', // Include primary key
-          'item.name', // Select specific columns from item
-          'item.type_id',
-          'item.created_at',
-          'item.deleted',
-          'item.quantity',
-          'item_type.id',
-          'item_type.name', // Group by all selected non-aggregated columns
-          'createdUser.username',
-          'updatedUser.username',
-        )
+        .groupBy('item.id', 'item_type.id', 'createdUser.id', 'updatedUser.id')
         .offset((page - 1) * limit)
         .limit(limit)
         .orderBy('item.id', 'desc');
@@ -214,14 +191,14 @@ export class ItemService {
           'item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity',
           ),
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', (join) => {
           join
@@ -236,18 +213,8 @@ export class ItemService {
             `%${search}%`,
           );
         })
-        .groupBy(
-          'item.id', // Include primary key
-          'item.name', // Select specific columns from item
-          'item.type_id',
-          'item.created_at',
-          'item.deleted',
-          'item.quantity',
-          'item_type.id',
-          'item_type.name', // Group by all selected non-aggregated columns
-          'createdUser.username',
-          'updatedUser.username',
-        )
+        .groupBy('item.id', 'item_type.id', 'createdUser.id', 'updatedUser.id')
+
         .limit(30);
 
       return items;
@@ -262,14 +229,14 @@ export class ItemService {
           'item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity',
           ),
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', (join) => {
           join
@@ -284,18 +251,8 @@ export class ItemService {
             `%${search}%`,
           );
         })
-        .groupBy(
-          'item.id', // Include primary key
-          'item.name', // Select specific columns from item
-          'item.type_id',
-          'item.created_at',
-          'item.deleted',
-          'item.quantity',
-          'item_type.id',
-          'item_type.name', // Group by all selected non-aggregated columns
-          'createdUser.username',
-          'updatedUser.username',
-        )
+        .groupBy('item.id', 'item_type.id', 'createdUser.id', 'updatedUser.id')
+
         .limit(30);
       return items;
     } catch (error) {
@@ -309,14 +266,14 @@ export class ItemService {
           'item.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
           this.knex.raw(
-            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity',
           ),
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', (join) => {
           join
@@ -325,18 +282,8 @@ export class ItemService {
         })
         .where('item.id', id)
         .andWhere('item.deleted', false)
-        .groupBy(
-          'item.id', // Include primary key
-          'item.name', // Select specific columns from item
-          'item.type_id',
-          'item.created_at',
-          'item.deleted',
-          'item.quantity',
-          'item_type.id',
-          'item_type.name', // Group by all selected non-aggregated columns
-          'createdUser.username',
-          'updatedUser.username',
-        )
+        .groupBy('item.id', 'item_type.id', 'createdUser.id', 'updatedUser.id')
+
         .first();
 
       if (!item) {
@@ -351,12 +298,8 @@ export class ItemService {
   async create(data: CreateItemDto, user_id: number): Promise<Item> {
     try {
       const item: Item[] = await this.knex<Item>('item')
-
-        .where('item.deleted', false)
-
         .insert({ created_by: user_id, ...data })
         .returning('*');
-      //save the history
 
       await this.knex<ItemQuantityHistory>('item_quantity_history').insert({
         item_id: item[0].id,
@@ -401,6 +344,7 @@ export class ItemService {
       > = await this.knex<Item>('item')
         .select('quantity', 'id', 'item_purchase_price', 'item_sell_price')
         .where('id', id)
+        .andWhere('deleted', false)
         .first();
 
       if (type == 'decrease') {
@@ -412,8 +356,8 @@ export class ItemService {
         }
       }
       const result: Item[] = await this.knex<Item>('item')
-        .where('item.id', id)
-        .andWhere('item.deleted', false)
+        .where('id', id)
+        .andWhere('deleted', false)
         .update({
           quantity:
             type == 'increase'

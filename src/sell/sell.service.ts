@@ -42,14 +42,13 @@ export class SellService {
       const sells: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .offset((page - 1) * limit)
         .where('sell.deleted', false)
-
         .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
@@ -89,11 +88,11 @@ export class SellService {
       const sells: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .offset((page - 1) * limit)
         .where('sell.deleted', true)
         .andWhere(function () {
@@ -130,11 +129,11 @@ export class SellService {
       const sells: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .where(function () {
           this.whereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
         })
@@ -151,11 +150,11 @@ export class SellService {
       const sells: Sell[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .where(function () {
           this.whereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
         })
@@ -172,11 +171,11 @@ export class SellService {
       const sell: Sell = await this.knex<Sell>('sell')
         .select(
           'sell.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .where('sell.id', id)
         .andWhere('sell.deleted', false)
         .first();
@@ -193,20 +192,20 @@ export class SellService {
           'sell_item.*',
           'item.id as item_id',
           'item.name as item_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
         .leftJoin('item', 'sell_item.item_id', 'item.id')
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
+        )
         .where('sell_item.sell_id', sell_id)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false);
@@ -224,20 +223,20 @@ export class SellService {
           'sell_item.*',
           'item.id as item_id',
           'item.name as item_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
         .leftJoin('item', 'sell_item.item_id', 'item.id')
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
+        )
         .where('sell_item.sell_id', sell_id)
         .andWhere('sell_item.deleted', true)
         .andWhere('sell_item.self_deleted', true);
@@ -257,20 +256,20 @@ export class SellService {
           'sell_item.*',
           'item.id as item_id',
           'item.name as item_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
         .leftJoin('item', 'sell_item.item_id', 'item.id')
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
+        )
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', true)
         .offset((page - 1) * limit)
@@ -302,20 +301,20 @@ export class SellService {
           'sell_item.*',
           'item.id as item_id',
           'item.name as item_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
         )
         .leftJoin('item', 'sell_item.item_id', 'item.id')
         .leftJoin(
           'user as createdUser',
           'sell_item.created_by',
           'createdUser.id',
-        ) // Join for created_by
+        )
         .leftJoin(
           'user as updatedUser',
           'sell_item.updated_by',
           'updatedUser.id',
-        ) // Join for updated_by
+        )
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', true)
         .andWhere(function () {
@@ -827,9 +826,6 @@ export class SellService {
   async delete(id: Id): Promise<Id> {
     try {
       await this.knex<Sell>('sell').where('id', id).update({ deleted: true });
-
-      //delete all sell_items with this sell_id
-
       await this.knex<SellItem>('sell_item')
         .where('sell_id', id)
         .update({ deleted: true, self_deleted: true });
@@ -845,7 +841,7 @@ export class SellService {
       // Restore only the selected sell_items based on the provided item_ids
       if (body.item_ids && body.item_ids.length > 0) {
         await this.knex<SellItem>('sell_item')
-          .whereIn('item_id', body.item_ids) // Only restore items with the ids in item_ids
+          .whereIn('item_id', body.item_ids)
           .andWhere('sell_id', id)
           .update({ deleted: false, self_deleted: false });
       }

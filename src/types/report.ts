@@ -1,4 +1,4 @@
-import { Item, Sell, SellItem } from 'database/types';
+import { Item, ItemQuantityHistory, Sell, SellItem } from 'database/types';
 
 export type CaseReport = {
   id: number;
@@ -48,6 +48,7 @@ export type KogaMovementReportInfo = {
   total_count: number;
   total_item_quantity: number;
   total_item_purchase_price: number;
+  total_cost: number;
 };
-export type KogaMovementReportData = SellItem &
+export type KogaMovementReportData = ItemQuantityHistory &
   Item & { total_quantity: number; actual_quantity: number };

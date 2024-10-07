@@ -35,6 +35,7 @@ import {
   ItemReportInfo,
   KogaAllReportData,
   KogaAllReportInfo,
+  KogaMovementReportData,
   KogaMovementReportInfo,
   KogaNullReportData,
   KogaNullReportInfo,
@@ -1171,7 +1172,6 @@ export class ReportService {
         })
         .groupBy(
           'item.id', // Group by item.id
-          'item_type.name',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
@@ -1286,7 +1286,6 @@ export class ReportService {
         })
         .groupBy(
           'item.id',
-          'item_type.name',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
@@ -1398,7 +1397,6 @@ export class ReportService {
         })
         .groupBy(
           'item.id',
-          'item_type.name',
           'item_type.id',
           'createdUser.username',
           'updatedUser.username',
@@ -1609,12 +1607,17 @@ export class ReportService {
         'item_quantity_history',
       )
         .select(
-          this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
+          this.knex.raw(
+            'COUNT(DISTINCT item_quantity_history.id) as total_count',
+          ),
           this.knex.raw(
             'SUM(item_quantity_history.quantity) as total_item_quantity',
           ),
           this.knex.raw(
             'SUM(item_quantity_history.item_purchase_price) as total_item_purchase_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(item_quantity_history.quantity, 0) * item_quantity_history.item_purchase_price) as total_cost',
           ),
         )
         .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
@@ -1670,14 +1673,16 @@ export class ReportService {
             this.where('user.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
               .orWhere('item.name', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`])
+              .orWhereRaw('CAST(item_quantity_history.id AS TEXT) ILIKE ?', [
+                `%${search}%`,
+              ]);
           }
         })
         .groupBy(
           'item_quantity_history.id',
           'item.id', // Group by item.id
           'user.username',
-          'item.name',
           'item_type.id', // Group by item_type.id
         ) // Grouping at the item level
 
@@ -1689,18 +1694,25 @@ export class ReportService {
     }
   }
 
-  async getKogaMovementInformationSearch(search: Search): Promise<any> {
+  async getKogaMovementInformationSearch(
+    search: Search,
+  ): Promise<KogaMovementReportInfo> {
     try {
       const itemData: any = await this.knex<ItemQuantityHistory>(
         'item_quantity_history',
       )
         .select(
-          this.knex.raw('COUNT(DISTINCT item.id) as total_count'),
+          this.knex.raw(
+            'COUNT(DISTINCT item_quantity_history.id) as total_count',
+          ),
           this.knex.raw(
             'SUM(item_quantity_history.quantity) as total_item_quantity',
           ),
           this.knex.raw(
             'SUM(item_quantity_history.item_purchase_price) as total_item_purchase_price',
+          ),
+          this.knex.raw(
+            'SUM(COALESCE(item_quantity_history.quantity, 0) * item_quantity_history.item_purchase_price) as total_cost',
           ),
         )
         .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
@@ -1711,7 +1723,11 @@ export class ReportService {
             // Searching by the username of the created user
             this.where('user.username', 'ilike', `%${search}%`)
               .orWhere('item.barcode', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`])
+              .orWhereRaw('CAST(item_quantity_history.id AS TEXT) ILIKE ?', [
+                `%${search}%`,
+              ]);
           }
         });
 
@@ -1724,26 +1740,32 @@ export class ReportService {
   async kogaMovementPrintData(
     filter: Filter,
     search: Search,
-
     from: From,
     to: To,
-  ): Promise<any> {
+  ): Promise<{
+    item: ItemQuantityHistory[];
+    info: KogaMovementReportInfo;
+  }> {
     try {
-      const item: Item[] = await this.knex<Item>('item')
+      const item: ItemQuantityHistory[] = await this.knex<ItemQuantityHistory>(
+        'item_quantity_history',
+      )
         .select(
-          'item.*',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-          this.knex.raw(
-            'COALESCE(SUM(item_item.item_item_price * item_item.quantity), 0) as total_item_item_price',
-          ), // Sum of item_item_price
+          'item_quantity_history.*',
+          'item.barcode as item_barcode',
+          'item.id as item_id',
+          'item.name as item_name',
+          'user.username as created_by',
+          'item_type.id as type_id', // Get item_type_id
+          'item_type.name as type_name', // Get item_type_name
         )
-        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('item_item', 'item.id', 'item_item.item_id') // Join item_item to sum the prices
-        .where('item.deleted', false)
-        .andWhere('item_item.deleted', false)
-        .andWhere('item_item.self_deleted', false)
+        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id') // Join for created_by
+        .leftJoin('item', 'item_quantity_history.item_id', 'item.id') // Join with item_type to get type name
+        .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type
+        .where(function () {
+          this.where('item.deleted', false).orWhereNull('item.deleted');
+        })
+
         .andWhere(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
@@ -1754,21 +1776,33 @@ export class ReportService {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('item.created_at', [fromDate, toDate]);
+            this.whereBetween('item_quantity_history.created_at', [
+              fromDate,
+              toDate,
+            ]);
           }
           if (search && search !== '') {
             // Searching by the username of the created user
-            this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
+            this.where('user.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item_quantity_history.id AS TEXT) ILIKE ?', [
+                `%${search}%`,
+              ])
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
               .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by item id
           }
         })
-        .groupBy('item.id', 'createdUser.username', 'updatedUser.username') // Group by item and user fields
-        .orderBy('item.id', 'desc');
+        .groupBy(
+          'item_quantity_history.id',
+          'item.id', // Group by item.id
+          'user.username',
+          'item_type.id', // Group by item_type.id
+        ) // Group by item and user fields
+        .orderBy('item_quantity_history.id', 'desc');
 
       let info = !search
         ? await this.getKogaMovementInformation(filter, from, to)
-        : await this.getKogaAllInformationSearch(search);
+        : await this.getKogaMovementInformationSearch(search);
 
       return { item, info };
     } catch (error) {
@@ -1781,159 +1815,91 @@ export class ReportService {
     filter: Filter,
     from: From,
     to: To,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
       let data = await this.kogaMovementPrintData(filter, search, from, to);
-      const browser = await puppeteer.launch({
-        executablePath: '/usr/bin/google-chrome', // Use system Chrome
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-      });
-      const page = await browser.newPage();
 
-      await page.setViewport({ width: 1080, height: 1024 });
-
+      let { browser, page } = await generatePuppeteer({});
       const htmlContent = `
     <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display:flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            font-family:Calibri;
+<html lang="en">
+<head>
+${pdfStyle}
+</head>
 
-          }
-          .info {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .infoRight {
-            text-align: right;
-          
-          }
-          .infoLeft {
-            text-align: right;
-          }
-          .username {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            margin-top: 30px;
-            line-height: 1.3;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            
-          }
-          th, td {
-            border: 1px solid black;
+<body>
+  <p class="username">ڕاپۆرتی  جەردی کاڵا - جووڵەی کاڵا</p>
+
+    <div class="info_black">
+    <div class="infoRight">
+
+      <p>کۆی دانەی جوڵاو ${formatMoney(data.info.total_item_quantity)}</p>
+      <p>کۆی  تێچوو ${formatMoney(data.info.total_cost)}</p>
+
+    </div>
+    <div class="infoLeft">
+    <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
+      <p>کۆی  نرخی کڕین ${formatMoney(data.info.total_item_purchase_price)}</p>
     
-            text-align: center;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-left: 5px;
-            padding-right: 5px;
-            white-space: pre-wrap;
-            
-          }
-          th {
-            background-color: black;
-            padding-left: 5px;
-            padding-right: 5px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-          }
-        
-        </style>
-      </head>
-      <body>
-       
+      
+    </div>
+    
+  </div>
+  <table>
+    <thead>
+      <tr>
+       <th>بەروار</th>
+        <th>تێچوو</th>
+        <th>دانەی جوڵاو</th>
+        <th>نرخی کڕین</th>
+        <th>جۆر</th>
+        <th>بارکۆد</th>
+        <th>ناو</th>
      
+      </tr>
+    </thead>
+    <tbody id="table-body">
+    ${data.item.map((val: KogaMovementReportData, _index: number) => {
+      return `
+     <tr>
+        <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+        <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
+        <td>${formatMoney(val.quantity)}</td>
+        <td>${formatMoney(val.item_purchase_price)}</td>
+        <td>${val.type_name}</td>
+        <td>${val.item_barcode}</td>
+        <td>${val.item_name}</td>
+     </tr>
+        `;
+    })}
+    </tbody>
+  </table>
+<div class="info_black">
+    <div class="infoLeft">
+      <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+    </div>
+    <div class="infoRight">
+      <p>${user.username} چاپکراوە لەلایەن</p>
+    </div>
+  </div>
+</body>
+</html>
 
-
-
-            <p class="username">ڕاپۆرتی فرۆشتن
-            </p>
-
-            <div class="info">
-            <div class="infoLeft">
-                <p>${formatTimestampToDate(
-                  parseInt(data.item.created_at),
-                )} بەروار</p>
-                <p>${data.item.id} ر.وصل</p>
-            </div>
-            <div class="infoRight">
-             
-            </div>
-          </div>
-       
-
-
-
-     
-      </div>
-        <table>
-          <thead>
-            <tr>
-              <th>چاککار</th>
-              <th>داغڵکار</th>
-              <th>نرخ دوای داشکان</th>
-              <th>داشکاندن</th>
-              <th>کۆی گشتی</th>
-              <th>بەروار  </th>
-              <th>ژ.وەصڵ</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.item
-              .map(
-                (one_item, index) => `
-              <tr>
-                <td>${one_item.updated_by}</td>
-                <td>${one_item.created_by}</td>
-                <td>${one_item.total_item_item_price - one_item.discount}</td>
-                <td>${one_item.discount}</td>
-                <td>${one_item.total_item_item_price}</td>
-                <td>${one_item.created_at}</td>
-                <td>${one_item.id}</td>
-                <td>${index + 1}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
+    `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true, // Ensures backgrounds are printed
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }

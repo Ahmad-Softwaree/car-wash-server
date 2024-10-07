@@ -35,6 +35,8 @@ import {
   CaseReport,
   ItemReportInfo,
   KogaAllReportInfo,
+  KogaMovementReportInfo,
+  KogaNullReportInfo,
   SellReportInfo,
 } from 'src/types/report';
 
@@ -470,9 +472,10 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('filter') filter: Filter,
-  ): Promise<Response<any>> {
+  ): Promise<Response<KogaNullReportInfo>> {
     try {
-      let data: any = await this.reportService.getKogaNullInformation(filter);
+      let data: KogaNullReportInfo =
+        await this.reportService.getKogaNullInformation(filter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -512,9 +515,9 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<KogaNullReportInfo>> {
     try {
-      let data: any =
+      let data: KogaNullReportInfo =
         await this.reportService.getKogaNullInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -598,13 +601,10 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
-  ): Promise<Response<any>> {
+  ): Promise<Response<KogaMovementReportInfo>> {
     try {
-      let data: any = await this.reportService.getKogaMovementInformation(
-        filter,
-        from,
-        to,
-      );
+      let data: KogaMovementReportInfo =
+        await this.reportService.getKogaMovementInformation(filter, from, to);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -645,9 +645,9 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<KogaMovementReportInfo>> {
     try {
-      let data: any =
+      let data: KogaMovementReportInfo =
         await this.reportService.getKogaMovementInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -673,7 +673,20 @@ export class ReportController {
     @Query('search') search: Search,
   ): Promise<Response<void>> {
     try {
-      await this.reportService.kogaMovementPrint(filter, search, from, to, res);
+      let pdf = await this.reportService.kogaMovementPrint(
+        search,
+        filter,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
