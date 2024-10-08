@@ -12,7 +12,7 @@ export default class SignInDto {
   @ApiProperty({ example: 'ahmad123', description: 'The password of the user' })
   @IsString({ message: 'Password must be a string' })
   @IsNotEmpty({ message: 'Password is required' })
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
-  @MaxLength(50, { message: 'Password can be at most 50 characters long' })
+  @MinLength(3, { message: 'وشەی نهێنی دەبێت لانیکەم ٣ پیت بێت' })
+  @MaxLength(30, { message: 'وشەی نهێنی دەبێت زۆر نەبێت لە ٣٠ پیت' })
   password: string;
 }
