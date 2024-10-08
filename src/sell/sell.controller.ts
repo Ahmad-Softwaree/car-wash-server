@@ -284,9 +284,10 @@ export class SellController {
     @Req() req: Request,
     @Res() res: Response,
     @Param('sell_id', ParseIntPipe) sell_id: Id,
-  ): Promise<Response<void>> {
+  ): Promise<Response<string>> {
     try {
-      await this.sellService.print(sell_id, res);
+      let data = await this.sellService.print(sell_id, res, req['user'].id);
+      res.status(HttpStatus.OK).json({ data });
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

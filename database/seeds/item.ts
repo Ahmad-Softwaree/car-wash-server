@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 import { ItemType } from 'database/types';
 import { Knex } from 'knex';
 
-const items = Array.from({ length: 5 }, () => ({
+const items = Array.from({ length: 20 }, () => ({
   name: faker.commerce.productName(),
   barcode: faker.string.alphanumeric(12),
   type_id: null,
@@ -14,7 +14,6 @@ const items = Array.from({ length: 5 }, () => ({
   item_purchase_price: faker.number.int({ min: 0, max: 1000 }),
   item_sell_price: faker.number.int({ min: 0, max: 1000 }),
   created_by: 1,
-
   note: faker.lorem.sentence(),
   deleted: false,
   created_at: new Date(),

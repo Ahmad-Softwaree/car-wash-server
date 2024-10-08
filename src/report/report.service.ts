@@ -298,17 +298,19 @@ export class ReportService {
         </tr>
       </thead>
       <tbody id="table-body">
-      ${data.sell.map((val: SellReportData, _index: number) => {
-        return `
-       <tr>
-           <td>${formatMoney(val.total_sell_price - val.discount)}</td>
-                <td>${formatMoney(val.discount)}</td>
-                <td>${formatMoney(val.total_sell_price)}</td>
-                <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
-                <td>${val.id}</td>
-       </tr>
-          `;
-      })}
+      ${data.sell
+        .map((val: SellReportData, _index: number) => {
+          return `
+          <tr>
+            <td>${formatMoney(val.total_sell_price - val.discount)}</td>
+            <td>${formatMoney(val.discount)}</td>
+            <td>${formatMoney(val.total_sell_price)}</td>
+            <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+            <td>${val.id}</td>
+          </tr>
+        `;
+        })
+        .join('')}
       </tbody>
     </table>
   <div class="info_black">
@@ -654,20 +656,23 @@ export class ReportService {
         </tr>
       </thead>
       <tbody id="table-body">
-      ${data.item.map((val: ItemReportData, _index: number) => {
-        return `
-       <tr>
-          <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
-          <td>${formatMoney(val.item_sell_price * val.quantity)}</td>
-          <td>${formatMoney(val.item_sell_price)}</td>
-          <td>${formatMoney(val.quantity)}</td>
-          <td>${val.type_name}</td>
-          <td>${val.item_barcode}</td>
-          <td>${val.item_name}</td>
-          <td>${val.sell_id}</td>
-       </tr>
-          `;
-      })}
+${data.item
+  .map(
+    (val: ItemReportData, _index: number) => `
+  <tr>
+    <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+    <td>${formatMoney(val.item_sell_price * val.quantity)}</td>
+    <td>${formatMoney(val.item_sell_price)}</td>
+    <td>${formatMoney(val.quantity)}</td>
+    <td>${val.type_name}</td>
+    <td>${val.item_barcode}</td>
+    <td>${val.item_name}</td>
+    <td>${val.sell_id}</td>
+  </tr>
+`,
+  )
+  .join('')}
+
       </tbody>
     </table>
   <div class="info_black">
@@ -965,7 +970,6 @@ export class ReportService {
       let data = await this.kogaAllPrintData(search, filter);
 
       let { browser, page } = await generatePuppeteer({});
-      console.log(data.item.length);
       const htmlContent = `
       <!DOCTYPE html>
 <html lang="en">
@@ -1015,21 +1019,24 @@ export class ReportService {
         </tr>
       </thead>
       <tbody id="table-body">
-      ${data.item.map((val: KogaAllReportData, _index: number) => {
-        return `
-       <tr>
-          <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
-          <td>${formatMoney(val.quantity - val.sell_quantity)}</td>
-          <td>${formatMoney(val.sell_quantity)}</td>
-          <td>${formatMoney(val.item_sell_price)}</td>
-          <td>${formatMoney(val.quantity)}</td>
-          <td>${formatMoney(val.item_purchase_price)}</td>
-          <td>${val.type_name}</td>
-          <td>${val.barcode}</td>
-          <td>${val.name}</td>
-       </tr>
-          `;
-      })}
+ ${data.item
+   .map(
+     (val: KogaAllReportData) => `
+  <tr>
+    <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
+    <td>${formatMoney(val.quantity - val.sell_quantity)}</td>
+    <td>${formatMoney(val.sell_quantity)}</td>
+    <td>${formatMoney(val.item_sell_price)}</td>
+    <td>${formatMoney(val.quantity)}</td>
+    <td>${formatMoney(val.item_purchase_price)}</td>
+    <td>${val.type_name}</td>
+    <td>${val.barcode}</td>
+    <td>${val.name}</td>
+  </tr>
+`,
+   )
+   .join('')}
+
       </tbody>
     </table>
   <div class="info_black">
@@ -1393,21 +1400,24 @@ export class ReportService {
         </tr>
       </thead>
       <tbody id="table-body">
-      ${data.item.map((val: KogaNullReportData, _index: number) => {
-        return `
-       <tr>
-          <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
-          <td>${formatMoney(val.quantity - val.sell_quantity)}</td>
-          <td>${formatMoney(val.sell_quantity)}</td>
-          <td>${formatMoney(val.item_sell_price)}</td>
-          <td>${formatMoney(val.quantity)}</td>
-          <td>${formatMoney(val.item_purchase_price)}</td>
-          <td>${val.type_name}</td>
-          <td>${val.barcode}</td>
-          <td>${val.name}</td>
-       </tr>
-          `;
-      })}
+  ${data.item
+    .map(
+      (val: KogaNullReportData) => `
+  <tr>
+    <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
+    <td>${formatMoney(val.quantity - val.sell_quantity)}</td>
+    <td>${formatMoney(val.sell_quantity)}</td>
+    <td>${formatMoney(val.item_sell_price)}</td>
+    <td>${formatMoney(val.quantity)}</td>
+    <td>${formatMoney(val.item_purchase_price)}</td>
+    <td>${val.type_name}</td>
+    <td>${val.barcode}</td>
+    <td>${val.name}</td>
+  </tr>
+`,
+    )
+    .join('')}
+
       </tbody>
     </table>
   <div class="info_black">
@@ -1756,19 +1766,22 @@ ${pdfStyle}
       </tr>
     </thead>
     <tbody id="table-body">
-    ${data.item.map((val: KogaMovementReportData, _index: number) => {
-      return `
-     <tr>
-        <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
-        <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
-        <td>${formatMoney(val.quantity)}</td>
-        <td>${formatMoney(val.item_purchase_price)}</td>
-        <td>${val.type_name}</td>
-        <td>${val.item_barcode}</td>
-        <td>${val.item_name}</td>
-     </tr>
-        `;
-    })}
+ ${data.item
+   .map(
+     (val: KogaMovementReportData) => `
+  <tr>
+    <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+    <td>${formatMoney(val.quantity * val.item_purchase_price)}</td>
+    <td>${formatMoney(val.quantity)}</td>
+    <td>${formatMoney(val.item_purchase_price)}</td>
+    <td>${val.type_name}</td>
+    <td>${val.item_barcode}</td>
+    <td>${val.item_name}</td>
+  </tr>
+`,
+   )
+   .join('')}
+
     </tbody>
   </table>
 <div class="info_black">
@@ -2051,6 +2064,7 @@ ${pdfStyle}
     <div class="infoLeft">
        <p>کۆی پسوڵە ${formatMoney(data.info.sell_count)}</p>
       <p>کۆی گشتی پسوڵە ${formatMoney(data.info.total_sell_price)}</p>
+      <p>کۆی تێچووی پسوڵە ${formatMoney(data.info.total_purchase_price)}</p>
    
     </div>
   
@@ -2059,6 +2073,7 @@ ${pdfStyle}
     <thead>
       <tr>
         <th>کۆی قازانجی پسوڵە</th>
+        <th>کۆی تێچووی پسوڵە</th>
         <th>نرخی دوای داشکاندن</th>
         <th>داشکاندن</th>
         <th>کۆی گشتی</th>
@@ -2067,18 +2082,22 @@ ${pdfStyle}
       </tr>
     </thead>
     <tbody id="table-body">
-    ${data.sell.map((val: BillProfitReportData, _index: number) => {
-      return `
-     <tr>
-         <td>${formatMoney(val.total_sell_price - val.discount - val.total_purchase_price)}</td>
-         <td>${formatMoney(val.total_sell_price - val.discount)}</td>
-         <td>${formatMoney(val.discount)}</td>
-          <td>${formatMoney(val.total_sell_price)}</td>
-          <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
-          <td>${val.id}</td>
-     </tr>
-        `;
-    })}
+${data.sell
+  .map(
+    (val: BillProfitReportData) => `
+  <tr>
+    <td>${formatMoney(val.total_sell_price - val.discount - val.total_purchase_price)}</td>
+    <td>${formatMoney(val.total_purchase_price)}</td>
+    <td>${formatMoney(val.total_sell_price - val.discount)}</td>
+    <td>${formatMoney(val.discount)}</td>
+    <td>${formatMoney(val.total_sell_price)}</td>
+    <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+    <td>${val.id}</td>
+  </tr>
+`,
+  )
+  .join('')}
+
     </tbody>
   </table>
 <div class="info_black">
@@ -2120,7 +2139,6 @@ ${pdfStyle}
           'sell_item.*',
           'item.name as item_name',
           'item.barcode as item_barcode',
-          'sell.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
           'createdUser.username as created_by',
@@ -2197,6 +2215,9 @@ ${pdfStyle}
             'SUM(sell_item.item_purchase_price) as total_purchase_price',
           ),
           this.knex.raw(
+            'SUM(sell_item.item_purchase_price * sell_item.quantity) as total_cost',
+          ),
+          this.knex.raw(
             'SUM(sell_item.item_sell_price) - SUM(sell_item.item_purchase_price) as total_single_profit',
           ),
           this.knex.raw(
@@ -2236,7 +2257,6 @@ ${pdfStyle}
           'sell_item.*',
           'item.name as item_name',
           'item.barcode as item_barcode',
-          'sell.*',
           'item_type.id as type_id',
           'item_type.name as type_name',
           'createdUser.username as created_by',
@@ -2263,9 +2283,10 @@ ${pdfStyle}
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
-              .orWhere('item.name', 'ilike', `%${search}%`)
-              .orWhere('item.barcode', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
+
+              .orWhereRaw('CAST(sell_item.sell_id AS TEXT) ILIKE ?', [
+                `%${search}%`,
+              ]);
           }
         })
 
@@ -2294,6 +2315,9 @@ ${pdfStyle}
             'SUM(sell_item.item_sell_price) - SUM(sell_item.item_purchase_price) as total_single_profit',
           ),
           this.knex.raw(
+            'SUM(sell_item.item_purchase_price * sell_item.quantity) as total_cost',
+          ),
+          this.knex.raw(
             'SUM((sell_item.item_sell_price - sell_item.item_purchase_price) * sell_item.quantity) as total_profit',
           ),
         )
@@ -2314,9 +2338,10 @@ ${pdfStyle}
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
-              .orWhere('item.name', 'ilike', `%${search}%`)
-              .orWhere('item.barcode', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
+
+              .orWhereRaw('CAST(sell_item.sell_id AS TEXT) ILIKE ?', [
+                `%${search}%`,
+              ]);
           }
         })
 
@@ -2462,22 +2487,25 @@ ${pdfStyle}
         </tr>
       </thead>
       <tbody id="table-body">
-      ${data.item.map((val: ItemProfitReportData, _index: number) => {
-        return `
-       <tr>
-          <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
-           <td>${formatMoney((val.item_sell_price - val.item_purchase_price) * val.quantity)}</td>
-          <td>${formatMoney(val.item_sell_price - val.item_purchase_price)}</td>
-          <td>${formatMoney(val.item_purchase_price)}</td>
-          <td>${formatMoney(val.item_sell_price)}</td>
-          <td>${formatMoney(val.quantity)}</td>
-          <td>${val.type_name}</td>
-          <td>${val.item_barcode}</td>
-          <td>${val.item_name}</td>
-          <td>${val.sell_id}</td>
-       </tr>
-          `;
-      })}
+${data.item
+  .map(
+    (val: ItemProfitReportData) => `
+  <tr>
+    <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+    <td>${formatMoney((val.item_sell_price - val.item_purchase_price) * val.quantity)}</td>
+    <td>${formatMoney(val.item_sell_price - val.item_purchase_price)}</td>
+    <td>${formatMoney(val.item_purchase_price)}</td>
+    <td>${formatMoney(val.item_sell_price)}</td>
+    <td>${formatMoney(val.quantity)}</td>
+    <td>${val.type_name}</td>
+    <td>${val.item_barcode}</td>
+    <td>${val.item_name}</td>
+    <td>${val.sell_id}</td>
+  </tr>
+`,
+  )
+  .join('')}
+
       </tbody>
     </table>
   <div class="info_black">
@@ -2751,17 +2779,18 @@ ${pdfStyle}
         </tr>
       </thead>
       <tbody id="table-body">
-      ${data.expense.map((val: ExpenseReportData, _index: number) => {
-        return `
-       <tr>
-          
-                <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
-                <td>${formatMoney(val.price)}</td>
+   ${data.expense
+     .map(
+       (val: ExpenseReportData) => `
+  <tr>
+    <td>${formatDateToDDMMYY(val.created_at.toString())}</td>
+    <td>${formatMoney(val.price)}</td>
+    <td>${val.type_name}</td>
+  </tr>
+`,
+     )
+     .join('')}
 
-                <td>${val.type_name}</td>
-       </tr>
-          `;
-      })}
       </tbody>
     </table>
   <div class="info_black">
@@ -3097,7 +3126,7 @@ ${pdfStyle}
           <table>
             <thead>
               <tr>
-                <th>چاککار</th>
+                <th>نوێکەرەوە</th>
                 <th>داغڵکار</th>
                 <th>نرخ دوای داشکان</th>
                 <th>داشکاندن</th>

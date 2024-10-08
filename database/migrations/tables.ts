@@ -334,6 +334,14 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
       table.boolean('deleted').defaultTo(false);
 
       table.timestamps({ defaultToNow: true });
+    })
+    .createTable('printer', function (table) {
+      table.increments('id').primary();
+
+      table.string('name', 255).notNullable();
+      table.boolean('active').defaultTo(false);
+      table.boolean('deleted').defaultTo(false);
+      table.timestamps({ defaultToNow: true });
     });
 };
 

@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { Item, Sell, SellItem } from 'database/types';
+import * as printer from 'pdf-to-printer';
+import { Item, Printer, Sell, SellItem, User } from 'database/types';
 import { Knex } from 'knex';
 import {
   From,
@@ -14,12 +15,20 @@ import { UpdateSellDto } from './dto/update-sell.dto';
 import { AddItemToSellDto } from './dto/add-item-to-sell.dto';
 import { UpdateItemToSellDto } from './dto/update-item-to-sell';
 import { ItemService } from 'src/item/item.service';
-import * as PDFDocument from 'pdfkit';
 import * as JsBarcode from 'jsbarcode';
 import { Canvas } from 'canvas';
 import { Response } from 'express';
-import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
+import {
+  formatMoney,
+  generatePaginationInfo,
+  generatePuppeteer,
+  timestampToDateString,
+} from 'lib/functions';
 import { RestoreSellDto } from './dto/restore-sell.dto';
+import { posStyle } from 'lib/static/pdf';
+import { randomUUID } from 'node:crypto';
+import { join } from 'path';
+import { readFileSync, unlinkSync } from 'fs';
 
 @Injectable()
 export class SellService {
@@ -208,8 +217,8 @@ export class SellService {
         )
         .where('sell_item.sell_id', sell_id)
         .andWhere('sell_item.deleted', false)
-        .andWhere('sell_item.self_deleted', false);
-
+        .andWhere('sell_item.self_deleted', false)
+        .orderBy('sell_item.id', 'asc');
       return sellItems;
     } catch (error) {
       throw new Error(error.message);
@@ -340,20 +349,25 @@ export class SellService {
       throw new Error(error.message);
     }
   }
-  async print(sell_id: Id, res: Response): Promise<void> {
+  async print(sell_id: Id, res: Response, user_id: number): Promise<string> {
     try {
-      const today = new Date();
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
 
-      // Get the year, month, and day
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // Months are zero-indexed
-      const day = today.getDate();
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخسنت پرینتەرێک چالاک بکە');
+      }
 
-      const hours = today.getHours();
-      const minutes = today.getMinutes();
+      let logoImage = readFileSync(join(__dirname, '../../../assets/logo.jpg'));
+      let baseImage = Buffer.from(logoImage).toString('base64');
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
 
-      const formattedDate = `${year} - ${month} - ${day} ${hours}:${minutes}`;
-
+      let { browser, page } = await generatePuppeteer({});
       let sell: Sell = await this.findOne(sell_id);
 
       const sellItem: SellItem[] = await this.knex<SellItem>('sell_item')
@@ -361,239 +375,99 @@ export class SellService {
         .leftJoin('item', 'sell_item.item_id', 'item.id')
         .where('sell_item.sell_id', sell_id)
         .andWhere('sell_item.deleted', false);
+      const totalSellPrice = sellItem.reduce(
+        (total, item) => total + item.item_sell_price,
+        0,
+      );
 
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+      const hours = today.getHours();
+      const minutes = today.getMinutes();
+
+      const formattedDate = `${year} - ${month} - ${day} \t ${hours}:${minutes}`;
+      const MAX_HEIGHT = 480; // Set a maximum height (in pixels) for your PDF
+
+      const calculateHeight = MAX_HEIGHT + 30 * sellItem.length;
+
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
       if (sellItem.length > 0) {
-        const margin = 15;
-        const rowHeight = 20;
-        const pageWidth = 210;
+        const htmlContent = `
+        <!DOCTYPE html>
 
-        const columnWidthss = {
-          'کاڵا ناوی': 80,
-          عەدەد: 40,
-          نرخ: 40,
-          کۆ: 40,
-        };
-        const tableTop = 80; // Starting vertical position for the table
-        const tableBorderHeight =
-          rowHeight * (sellItem.length + 1) + (sellItem.length + 1) * 5;
-        const dateYPosition = tableTop + tableBorderHeight + 10;
-        const extraBottomSpace = 130; // Extra space for barcode and margin
-        const totalHeight =
-          tableTop +
-          (sellItem.length + 1) * rowHeight +
-          extraBottomSpace +
-          (sellItem.length + 1) * 5;
+<html lang="en">
+  <head>
 
-        let doc: PDFKit.PDFDocument = new PDFDocument({
-          size: [213, totalHeight],
-          margin: 15,
-        });
-        doc.font('assets/kurdish.TTF');
+ ${posStyle}
+  </head>
 
-        doc
-          .image('assets/logo.jpg', 18, 18, { width: 25 })
-          .fontSize(9)
+  <body>
+    <div class="pos">
+      <p class="username">وەصڵی فرۆشتن</p>
+      <h1>غەسلی ڕەها</h1>
 
-          .text('غەسلی ڕەها', {
-            features: ['rtla'],
-            align: 'right',
-          })
-          .fontSize(7)
-          .text('بۆ خزمەتگوزاری غەسلی ئۆتۆمبێڵ', {
-            features: ['rtla'],
-            align: 'right',
-          })
-          .text('07501167153 - 07701993085', {
-            features: ['rtla'],
-            align: 'right',
-          })
-          .moveDown(0.5);
-        //title
-        doc.rect(12, 12, 190, 40).stroke();
-        doc
-          .fontSize(9.2)
-          .lineGap(2)
-          .stroke()
-          .text(`${sell_id}       ر.وصل`, {
-            align: 'right',
-          })
-          .moveDown(0.7);
-        //wasl
-        doc.rect(12, 55, 190, 20).stroke();
-        doc.rect(167, 55, 35, 20).stroke();
+      <div class="info_black">
+        <p>بەرواری وەصڵ : ${formattedDate}</p>
+        <p>کارمەند : ${user.username}</p>
+        <p>ژ.وەصڵ : ${sell.id}</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>کۆ</th>
+            <th>نرخ</th>
+            <th>عەدەد</th>
+            <th>کاڵا</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+            ${sellItem
+              .map(
+                (val: SellItem) => `
+            <tr>
+              <td>${formatMoney(val.quantity * val.item_sell_price)}</td>
+              <td>${formatMoney(val.item_sell_price)}</td>
+              <td>${formatMoney(val.quantity)}</td>
+              <td>${val.item_name}</td>
+            </tr>`,
+              )
+              .join('')}
+        </tbody>
+      </table>
+      <div class="info_black">
+        <p>ژمارەی کاڵا : ${sellItem.length}</p>
+        <p>ژ.نرخی گشتی : ${formatMoney(totalSellPrice)}</p>
+        <p>داشکاندن : ${formatMoney(sell.discount)}</p>
+        <p>ژ.نرخی دوای داشکان : ${formatMoney(totalSellPrice - sell.discount)}</p>
+      </div>
+    </div>
+  </body>
+</html>
+        `;
+        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-        // Define table columns and positions
-
-        doc.fontSize(9);
-
-        let currentX = pageWidth - margin;
-        const columnWidths = {
-          itemName: 60,
-          quantity: 40,
-          price: 40,
-          total: 40,
-        };
-        // Render columns from right to left
-        ['کاڵا ناوی', 'عەدەد', 'نرخ', 'کۆ'].forEach((header) => {
-          currentX -= columnWidthss[header];
-          doc.text(header, currentX, tableTop, {
-            width: columnWidthss[header],
-            align: 'right',
-          });
-        });
-        // Function to split text into lines based on column width
-        const splitText = (
-          text: string,
-          width: number,
-          fontSize: number,
-        ): string[] => {
-          const lines: string[] = [];
-          let currentLine = '';
-          const words = text.split(' ');
-
-          words.forEach((word) => {
-            const testLine = currentLine ? `${currentLine} ${word}` : word;
-            const widthOfLine = doc.widthOfString(testLine);
-
-            if (widthOfLine > width) {
-              lines.push(currentLine);
-              currentLine = word;
-            } else {
-              currentLine = testLine;
-            }
-          });
-
-          if (currentLine) {
-            lines.push(currentLine);
-          }
-
-          return lines;
-        };
-        doc
-          .moveTo(15, tableTop + rowHeight)
-          .lineTo(195, tableTop + rowHeight)
-          .stroke();
-        // Render each row of the table
-        sellItem.forEach((item: SellItem, index) => {
-          const y = tableTop + (index + 1) * rowHeight;
-          const lines = splitText(
-            item.item_name,
-            columnWidthss['کاڵا ناوی'],
-            9,
-          );
-
-          lines.forEach((line, lineIndex) => {
-            doc
-              .fontSize(9)
-              .text(
-                line,
-                pageWidth - margin - columnWidthss['کاڵا ناوی'],
-                y + lineIndex * 10,
-                {
-                  width: columnWidthss['کاڵا ناوی'],
-                  align: 'right',
-                  lineBreak: false, // Disable automatic line breaking
-                },
-              );
-          });
-
-          doc
-            .fontSize(9)
-            .text(
-              item.quantity.toString(),
-              pageWidth -
-                margin -
-                columnWidthss['کاڵا ناوی'] -
-                columnWidthss['عەدەد'],
-              y,
-              {
-                width: columnWidthss['عەدەد'],
-                align: 'right',
-              },
-            )
-            .text(
-              item.item_sell_price.toFixed(0),
-              pageWidth -
-                margin -
-                columnWidthss['کاڵا ناوی'] -
-                columnWidthss['عەدەد'] -
-                columnWidthss['نرخ'],
-              y,
-              {
-                width: columnWidthss['نرخ'],
-                align: 'right',
-              },
-            )
-            .text(
-              (item.quantity * item.item_sell_price).toFixed(0),
-              pageWidth -
-                margin -
-                columnWidthss['کاڵا ناوی'] -
-                columnWidthss['عەدەد'] -
-                columnWidthss['نرخ'] -
-                columnWidthss['کۆ'],
-              y,
-              {
-                width: columnWidthss['کۆ'],
-                align: 'right',
-              },
-            );
-        });
-        // Draw final table border
-        doc.rect(10, tableTop - 5, 193, tableBorderHeight).stroke();
-        // Print the formatted date
-        doc.text(`داشکاندن : ${sell.discount}`, 10, dateYPosition, {
-          align: 'center',
-          continued: true,
-          // Position the date below the table
-          indent: 10, // Align text to the right margin with extra space
-          baseline: 'alphabetic', // Adjust baseline if needed
-          width: 193, // Ensure it fits within the page width
-          paragraphGap: 10, // Additional space after the text
-          // Positioning
-        });
-
-        doc.text(
-          `گشتی کۆی : ${(
-            sellItem?.reduce((accumulator: number, val: SellItem) => {
-              return accumulator + Number(val.item_sell_price) * val.quantity;
-            }, 0) - Number(sell?.discount)
-          ).toFixed(0)}`,
-          10,
-          dateYPosition + 20,
-          {
-            align: 'left',
-            continued: true,
-            // Position the date below the table
-            indent: 10, // Align text to the right margin with extra space
-            baseline: 'alphabetic', // Adjust baseline if needed
-            width: 193, // Ensure it fits within the page width
-            paragraphGap: 10, // Additional space after the text
-            // Positioning
+        const pdfBuffer = await page.pdf({
+          path: pdfPath,
+          height: `${calculateHeight}px`,
+          width: '90mm',
+          printBackground: true,
+          waitForFonts: true,
+          margin: {
+            top: '0mm',
+            right: '0mm',
+            bottom: '0mm',
+            left: '0mm',
           },
-        );
-
-        doc.text(formattedDate, 10, dateYPosition + 40, {
-          align: 'right',
-          continued: true,
-          // Position the date below the table
-          indent: 10, // Align text to the right margin with extra space
-          baseline: 'alphabetic', // Adjust baseline if needed
-          width: 193, // Ensure it fits within the page width
-          paragraphGap: 10, // Additional space after the text
-          // Positioning
+        });
+        const jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
         });
 
-        doc.image(this.generateBarcode(sell_id), 10, totalHeight - 50, {
-          width: 30,
-          align: 'center',
-        });
-
-        //border
-        doc.rect(5, 5, 203, totalHeight - 10).stroke();
-        doc.end();
-
-        doc.pipe(res);
+        unlinkSync(pdfPath);
+        await browser.close();
+        return 'success';
       } else {
         throw new BadRequestException('مواد داخڵ کە بۆ سەر وەصڵ');
       }

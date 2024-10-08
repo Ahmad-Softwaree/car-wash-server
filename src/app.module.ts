@@ -30,6 +30,7 @@ import { ReservationModule } from './reservation/reservation.module';
 import { BackupModule } from './backup/backup.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportModule } from './report/report.module';
+import { PrinterModule } from './printer/printer.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { ReportModule } from './report/report.module';
     BackupModule,
     DashboardModule,
     ReportModule,
+    PrinterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

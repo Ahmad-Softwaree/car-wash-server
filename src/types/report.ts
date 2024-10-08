@@ -91,6 +91,7 @@ export type ItemProfitReportInfo = {
   total_purchase_price: number;
   total_single_profit: number;
   total_profit: number;
+  total_cost: number;
 };
 export type ItemProfitReportData = SellItem & {
   total_sell: number;

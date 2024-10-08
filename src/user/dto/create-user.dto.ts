@@ -28,6 +28,17 @@ export default class CreateUserDto {
   password: string;
 
   @ApiProperty({
+    example: '1234567890',
+    description: 'The phone number of the user',
+  })
+  @IsString({ message: 'ژمارە تەلەفۆن دەبێت ڕشتە بێت' })
+  @IsNotEmpty({ message: 'ژمارە تەلەفۆن پێویستە' })
+  @Matches(/^\d+$/, {
+    message: 'ژمارە تەلەفۆن تەنها دەتوانێت ژمارە لەخۆ بگرێت',
+  })
+  phone: string;
+
+  @ApiProperty({
     example: 'John Doe',
     description: 'The full name of the user',
   })

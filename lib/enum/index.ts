@@ -23,7 +23,8 @@ export type ENUM_TYPES =
   | 'KOGA_REPORT_PART'
   | 'PROFIT_REPORT_PART'
   | 'CASE_REPORT_PART'
-  | 'EXPENSE_REPORT_PART';
+  | 'EXPENSE_REPORT_PART'
+  | 'PRINTER_PART';
 
 export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
   //GLOBAL
@@ -50,6 +51,6 @@ export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
   CASE_REPORT_PART: 'ڕاپۆرتی صندوق',
   PROFIT_REPORT_PART: 'ڕاپۆرتی قازانج',
   EXPENSE_REPORT_PART: 'ڕاپۆرتی خەرجی',
-
+  PRINTER_PART: 'پرینتەرەکان',
   KOGA_REPORT_PART: 'ڕاپۆرتی کۆگا',
 };
