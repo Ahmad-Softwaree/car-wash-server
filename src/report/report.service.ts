@@ -33,6 +33,8 @@ import {
   BillProfitReportData,
   BillProfitReportInfo,
   CaseReport,
+  CaseReportData,
+  CaseReportInfo,
   ExpenseReportData,
   ExpenseReportInfo,
   ItemProfitReportData,
@@ -2871,7 +2873,7 @@ ${data.item
     }
   }
 
-  async getCaseInformation(from: From, to: To): Promise<any> {
+  async getCaseInformation(from: From, to: To): Promise<CaseReportInfo> {
     try {
       let itemData: any = await this.knex<SellItem>('sell_item')
         .select(
@@ -2933,7 +2935,7 @@ ${data.item
     }
   }
 
-  async getCaseInformationSearch(search: Search): Promise<any> {
+  async getCaseInformationSearch(search: Search): Promise<CaseReportInfo> {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
         .select(
@@ -2965,9 +2967,16 @@ ${data.item
     }
   }
 
-  async casePrintData(search: Search, from: From, to: To): Promise<any> {
+  async casePrintData(
+    search: Search,
+    from: From,
+    to: To,
+  ): Promise<{
+    sell: CaseReport[];
+    info: CaseReportInfo;
+  }> {
     try {
-      const sell: Sell[] = await this.knex<Sell>('sell')
+      const sell: CaseReport[] = await this.knex<SellItem>('sell_item')
         .select(
           'user.username as created_by',
           'user.id as user_id',
@@ -2976,9 +2985,8 @@ ${data.item
           ),
           this.knex.raw('COALESCE(SUM(sell_item.quantity), 0) as sold'),
         )
-        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id') // Join for created_by
-        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id') // Join for updated_by
-        .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id') // Join sell_item to sum the prices
+        .leftJoin('user', 'sell_item.created_by', 'user.id')
+        .leftJoin('sell', 'sell_item.sell_id', 'sell.id')
         .where('sell.deleted', false)
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', false)
@@ -2986,17 +2994,17 @@ ${data.item
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('sell.created_at', [fromDate, toDate]);
+            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
           if (search && search !== '') {
-            // Searching by the username of the created user
-            this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`) // Optionally search by updatedUser.username as well
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by sell id
+            this.where('user.username', 'ilike', `%${search}%`).orWhereRaw(
+              'CAST(user.id AS TEXT) ILIKE ?',
+              [`%${search}%`],
+            );
           }
         })
-        .groupBy('sell.id', 'createdUser.username', 'updatedUser.username') // Group by sell and user fields
-        .orderBy('sell.id', 'desc');
+        .groupBy('user.username', 'user.id')
+        .orderBy('sold_price', 'desc');
 
       let info = !search
         ? await this.getCaseInformation(from, to)
@@ -3012,160 +3020,85 @@ ${data.item
     search: Search,
     from: From,
     to: To,
-    res: Response,
-  ): Promise<void> {
+    user_id: number,
+  ): Promise<Uint8Array> {
     try {
-      let data = await this.casePrintData(search, from, to);
-      const browser = await puppeteer.launch({
-        // executablePath:
-        //   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-        args: [
-          '--disable-gpu',
-          '--disable-setuid-sandbox',
-          '--no-sandbox',
-          '--no-zygote',
-          '--disable-web-security',
-        ],
-        dumpio: true,
-      });
-      const page = await browser.newPage();
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
 
-      await page.setViewport({ width: 1080, height: 1024 });
+      let data = await this.casePrintData(search, from, to);
+
+      let { browser, page } = await generatePuppeteer({});
 
       const htmlContent = `
       <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 20px;
-              display:flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              line-height: 1;
-              font-family:Calibri;
-  
-            }
-            .info {
-              display: flex;
-              flex-direction: row;
-              justify-content: space-between;
-              width: 100%;
-            }
-            .infoRight {
-              text-align: right;
-            
-            }
-            .infoLeft {
-              text-align: right;
-            }
-            .username {
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-              font-size: 20px;
-              margin-top: 30px;
-              line-height: 1.3;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-              
-            }
-            th, td {
-              border: 1px solid black;
+<html lang="en">
+  <head>
+ ${pdfStyle}
+  </head>
+
+  <body>
+    <p class="username">ڕاپۆرتی صندوق</p>
+
+      <div class="info_black">
+        <div class="infoRight">
+        <p>کۆی نرخی فرۆشراو ${formatMoney(data.info.total_sell_price)}</p>
+    
+      </div>
+      <div class="infoLeft">
+         <p>کۆی دانەی فرۆشراو ${formatMoney(data.info.total_quantity)}</p>
       
-              text-align: center;
-              padding-top: 20px;
-              padding-bottom: 20px;
-              padding-left: 5px;
-              padding-right: 5px;
-              white-space: pre-wrap;
-              
-            }
-            th {
-              background-color: black;
-              padding-left: 5px;
-              padding-right: 5px;
-              padding-top: 20px;
-              padding-bottom: 20px;
-            }
-          
-          </style>
-        </head>
-        <body>
-         
-       
-  
-  
-  
-              <p class="username">ڕاپۆرتی فرۆشتن
-              </p>
-  
-              <div class="info">
-              <div class="infoLeft">
-                  <p>${formatTimestampToDate(
-                    parseInt(data.sell.created_at),
-                  )} بەروار</p>
-                  <p>${data.sell.id} ر.وصل</p>
-              </div>
-              <div class="infoRight">
-               
-              </div>
-            </div>
-         
-  
-  
-  
-       
-        </div>
-          <table>
-            <thead>
-              <tr>
-                <th>نوێکەرەوە</th>
-                <th>داغڵکار</th>
-                <th>نرخ دوای داشکان</th>
-                <th>داشکاندن</th>
-                <th>کۆی گشتی</th>
-                <th>بەروار  </th>
-                <th>ژ.وەصڵ</th>
-                <th>#</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.sell
-                .map(
-                  (one_sell, index) => `
-                <tr>
-                  <td>${one_sell.updated_by}</td>
-                  <td>${one_sell.created_by}</td>
-                  <td>${one_sell.total_sell_price - one_sell.discount}</td>
-                  <td>${one_sell.discount}</td>
-                  <td>${one_sell.total_sell_price}</td>
-                  <td>${one_sell.created_at}</td>
-                  <td>${one_sell.id}</td>
-                  <td>${index + 1}</td>
-                </tr>
-              `,
-                )
-                .join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
+     
+      </div>
+    
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>نرخی فرۆشتن</th>
+          <th>دانەی فرۆشراو</th>
+          <th>بەکارهێنەر</th>
+          <th>کۆدی بەکارهێنەر</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      ${data.sell
+        .map((val: CaseReportData, _index: number) => {
+          return `
+          <tr>
+        
+            <td>${formatMoney(val.sold_price)}</td>
+            <td>${formatMoney(val.sold)}</td>
+            <td>${val.created_by}</td>
+            <td>${val.user_id}</td>
+          </tr>
+        `;
+        })
+        .join('')}
+      </tbody>
+    </table>
+  <div class="info_black">
+      <div class="infoLeft">
+        <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+      </div>
+      <div class="infoRight">
+        <p>${user.username} چاپکراوە لەلایەن</p>
+      </div>
+    </div>
+  </body>
+</html>
+
+      `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-      });
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
       await browser.close();
 
-      res.send(pdfBuffer);
+      return pdfBuffer;
     } catch (error) {
       throw new Error(error.message);
     }

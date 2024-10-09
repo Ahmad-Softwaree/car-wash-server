@@ -34,6 +34,7 @@ import {
 import {
   BillProfitReportInfo,
   CaseReport,
+  CaseReportInfo,
   ExpenseReportInfo,
   ItemProfitReportInfo,
   ItemReportInfo,
@@ -1155,9 +1156,12 @@ export class ReportController {
     @Res() res: Response,
     @Query('from') from: From,
     @Query('to') to: To,
-  ): Promise<Response<any>> {
+  ): Promise<Response<CaseReportInfo>> {
     try {
-      let data: any = await this.reportService.getCaseInformation(from, to);
+      let data: CaseReportInfo = await this.reportService.getCaseInformation(
+        from,
+        to,
+      );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1197,9 +1201,10 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('search') search: Search,
-  ): Promise<Response<any>> {
+  ): Promise<Response<CaseReportInfo>> {
     try {
-      let data: any = await this.reportService.getCaseInformationSearch(search);
+      let data: CaseReportInfo =
+        await this.reportService.getCaseInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1220,9 +1225,21 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<void>> {
+  ): Promise<Response<Uint8Array>> {
     try {
-      await this.reportService.casePrint(search, from, to, res);
+      let pdf = await this.reportService.casePrint(
+        search,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

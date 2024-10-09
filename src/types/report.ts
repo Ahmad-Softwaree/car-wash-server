@@ -8,9 +8,20 @@ import {
 
 export type CaseReport = {
   id: number;
-  created_by: number;
+  created_by: string;
+  user_id: number;
   sold: number | string;
   sold_price: number | string;
+};
+
+export type CaseReportInfo = {
+  total_quantity: number;
+  total_sell_price: number;
+};
+
+export type CaseReportData = CaseReport & {
+  total_quantity: number;
+  total_sell_price: number;
 };
 
 export type SellReportInfo = {
