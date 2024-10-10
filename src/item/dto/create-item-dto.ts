@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  Min,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -23,8 +24,8 @@ export class CreateItemDto {
     description: 'The barcode of the item',
   })
   @IsString({ message: 'بارکۆد دەبێت ڕیزبەند بێت' })
-  @IsNotEmpty({ message: 'بارکۆد پێویستە' })
-  barcode: string;
+  @IsOptional()
+  barcode?: string;
 
   @ApiProperty({
     example: 'Item type',
@@ -57,9 +58,9 @@ export class CreateItemDto {
     description: 'The quantity of the item in stock',
   })
   @IsNumber({}, { message: 'بڕ دەبێت ژمارە بێت' })
-  @IsPositive({ message: 'بڕ دەبێت ئەرێنی بێت' })
-  @IsNotEmpty({ message: 'بڕ پێویستە' })
-  quantity: number;
+  @Min(0, { message: 'بڕ دەبێت ٠ یان زیاتر بێت' }) // Allow zero or positive numbers
+  @IsOptional()
+  quantity?: number;
 
   @ApiProperty({
     example: 50,

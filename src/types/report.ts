@@ -2,6 +2,7 @@ import {
   Expense,
   Item,
   ItemQuantityHistory,
+  Reservation,
   Sell,
   SellItem,
 } from 'database/types';
@@ -115,4 +116,19 @@ export type ExpenseReportInfo = {
 };
 export type ExpenseReportData = Expense & {
   type_name: string;
+};
+
+export type ReservationReportInfo = {
+  reservation_count: number;
+  total_price: number;
+};
+
+export type ReservationReportData = Reservation & {
+  total_sell_price: number;
+  customer_first_name: string;
+  customer_last_name: string;
+  color_name: string;
+  car_type_name: string;
+  car_model_name: string;
+  service_name: string;
 };

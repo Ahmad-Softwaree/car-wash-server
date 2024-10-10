@@ -23,8 +23,8 @@ export class UpdateItemDto {
     description: 'The barcode of the item',
   })
   @IsString({ message: 'بارکۆد دەبێت ڕیزبەند بێت' })
-  @IsNotEmpty({ message: 'بارکۆد پێویستە' })
-  barcode: string;
+  @IsOptional()
+  barcode?: string;
 
   @ApiProperty({
     example: 'Item type',
@@ -58,8 +58,8 @@ export class UpdateItemDto {
   })
   @IsNumber({}, { message: 'بڕ دەبێت ژمارە بێت' })
   @IsPositive({ message: 'بڕ دەبێت ئەرێنی بێت' })
-  @IsNotEmpty({ message: 'بڕ پێویستە' })
-  quantity: number;
+  @IsOptional()
+  quantity?: number;
 
   @ApiProperty({
     example: 50,

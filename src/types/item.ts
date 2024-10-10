@@ -17,6 +17,5 @@ export type ItemWithType = {
   note: string;
   created_at: Date | null;
   updated_at: Date | null;
-
   deleted: boolean;
 };

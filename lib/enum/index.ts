@@ -19,6 +19,7 @@ export type ENUM_TYPES =
   | 'SERVER_BACKUP_PART'
   | 'RESERVATION_PART'
   | 'DASHBOARD_PART'
+  | 'RESERVATION_REPORT_PART'
   | 'SELL_REPORT_PART'
   | 'KOGA_REPORT_PART'
   | 'PROFIT_REPORT_PART'
@@ -50,6 +51,7 @@ export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
   SELL_REPORT_PART: 'ڕاپۆرتی فرۆشتن',
   CASE_REPORT_PART: 'ڕاپۆرتی صندوق',
   PROFIT_REPORT_PART: 'ڕاپۆرتی قازانج',
+  RESERVATION_REPORT_PART: 'ڕاپۆرتی نۆرەکان',
   EXPENSE_REPORT_PART: 'ڕاپۆرتی خەرجی',
   PRINTER_PART: 'پرینتەرەکان',
   KOGA_REPORT_PART: 'ڕاپۆرتی کۆگا',

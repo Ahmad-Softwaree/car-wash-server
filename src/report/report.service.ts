@@ -3,6 +3,7 @@ import {
   Expense,
   Item,
   ItemQuantityHistory,
+  Reservation,
   Sell,
   SellItem,
   User,
@@ -11,6 +12,7 @@ import { Knex } from 'knex';
 
 import {
   formatDateToDDMMYY,
+  formateDateToYMDHM,
   formatMoney,
   formatTimestampToDate,
   generatePaginationInfo,
@@ -47,6 +49,8 @@ import {
   KogaMovementReportInfo,
   KogaNullReportData,
   KogaNullReportInfo,
+  ReservationReportData,
+  ReservationReportInfo,
   SellReportData,
   SellReportInfo,
 } from 'src/types/report';
@@ -3092,6 +3096,344 @@ ${data.item
 </html>
 
       `;
+      await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
+      await browser.close();
+
+      return pdfBuffer;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  //CASE REPORT
+  async getReservation(
+    page: Page,
+    limit: Limit,
+    from: From,
+    to: To,
+  ): Promise<PaginationReturnType<Reservation[]>> {
+    try {
+      const sell: Reservation[] = await this.knex<Reservation>('reservation')
+        .select(
+          'reservation.*',
+          'car_model.name as car_model_name',
+          'car_type.name as car_type_name',
+          'color.name as color_name',
+          'service.name as service_name',
+          'customer.first_name as customer_first_name',
+          'customer.last_name as customer_last_name',
+          'createdUser.username as created_by', // Alias for created_by user
+          'updatedUser.username as updated_by', // Alias for updated_by user
+        )
+        .leftJoin(
+          'user as createdUser',
+          'reservation.created_by',
+          'createdUser.id',
+        ) // Join for created_by
+        .leftJoin(
+          'user as updatedUser',
+          'reservation.updated_by',
+          'updatedUser.id',
+        ) // Join for updated_by
+        .leftJoin('car_model', 'reservation.car_model_id', 'car_model.id')
+        .leftJoin('car_type', 'reservation.car_type_id', 'car_type.id')
+        .leftJoin('color', 'reservation.color_id', 'color.id')
+        .leftJoin('service', 'reservation.service_id', 'service.id')
+        .leftJoin('customer', 'reservation.customer_id', 'customer.id')
+        .where('reservation.deleted', false)
+        .andWhere(function () {
+          if (from != '' && from && to != '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('reservation.date_time', [fromDate, toDate]);
+          }
+        })
+        .orderBy('price', 'desc')
+        .offset((page - 1) * limit)
+        .limit(limit);
+      const { hasNextPage } = await generatePaginationInfo<Reservation>(
+        this.knex<Reservation>('reservation'),
+        page,
+        limit,
+        false,
+      );
+
+      return {
+        paginatedData: sell,
+        meta: {
+          nextPageUrl: hasNextPage
+            ? `/localhost:3001?page=${Number(page) + 1}&limit=${limit}`
+            : null,
+          total: sell.length,
+        },
+      };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getReservationInformation(
+    from: From,
+    to: To,
+  ): Promise<ReservationReportInfo> {
+    try {
+      let reservation: any = await this.knex<Reservation>('reservation')
+        .select(
+          this.knex.raw('COUNT(DISTINCT reservation.id) as reservation_count'),
+          this.knex.raw('COALESCE(SUM(reservation.price), 0) as total_price'),
+        )
+        .where(function () {
+          if (from !== '' && from && to !== '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere('deleted', false);
+
+      return reservation[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getReservationSearch(search: Search): Promise<Reservation[]> {
+    try {
+      const sell: Reservation[] = await this.knex<Reservation>('reservation')
+        .select(
+          'reservation.*',
+          'car_model.name as car_model_name',
+          'car_type.name as car_type_name',
+          'color.name as color_name',
+          'service.name as service_name',
+          'customer.first_name as customer_first_name',
+          'customer.last_name as customer_last_name',
+          'createdUser.username as created_by', // Alias for created_by user
+          'updatedUser.username as updated_by', // Alias for updated_by user
+        )
+        .leftJoin(
+          'user as createdUser',
+          'reservation.created_by',
+          'createdUser.id',
+        ) // Join for created_by
+        .leftJoin(
+          'user as updatedUser',
+          'reservation.updated_by',
+          'updatedUser.id',
+        ) // Join for updated_by
+        .leftJoin('car_model', 'reservation.car_model_id', 'car_model.id')
+        .leftJoin('car_type', 'reservation.car_type_id', 'car_type.id')
+        .leftJoin('color', 'reservation.color_id', 'color.id')
+        .leftJoin('service', 'reservation.service_id', 'service.id')
+        .leftJoin('customer', 'reservation.customer_id', 'customer.id')
+        .where(function () {
+          this.whereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [`%${search}%`])
+            .orWhere('customer.first_name', 'ilike', `%${search}%`)
+            .orWhere('customer.last_name', 'ilike', `%${search}%`)
+            .orWhere('service.name', 'ilike', `%${search}%`)
+            .orWhere('color.name', 'ilike', `%${search}%`)
+            .orWhere('car_model.name', 'ilike', `%${search}%`)
+            .orWhere('car_type.name', 'ilike', `%${search}%`);
+        })
+        .orderBy('price', 'desc');
+
+      return sell;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getReservationInformationSearch(
+    search: Search,
+  ): Promise<ReservationReportInfo> {
+    try {
+      let reservation: any = await this.knex<Reservation>('reservation')
+        .select(
+          this.knex.raw('COUNT(DISTINCT reservation.id) as reservation_count'),
+          this.knex.raw('COALESCE(SUM(reservation.price), 0) as total_price'),
+        )
+        .leftJoin(
+          'user as createdUser',
+          'reservation.created_by',
+          'createdUser.id',
+        )
+        .leftJoin(
+          'user as updatedUser',
+          'reservation.updated_by',
+          'updatedUser.id',
+        )
+        .where(function () {
+          if (search && search !== '') {
+            this.where('createdUser.username', 'ilike', `%${search}%`)
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [
+                `%${search}%`,
+              ]);
+          }
+        })
+        .andWhere('reservation.deleted', false);
+
+      return reservation[0]; // Return the aggregated data
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async reservationPrintData(
+    search: Search,
+    from: From,
+    to: To,
+  ): Promise<{
+    sell: Reservation[];
+    info: ReservationReportInfo;
+  }> {
+    try {
+      const sell: Reservation[] = await this.knex<Reservation>('reservation')
+        .select(
+          'reservation.*',
+          'car_model.name as car_model_name',
+          'car_type.name as car_type_name',
+          'color.name as color_name',
+          'service.name as service_name',
+          'customer.first_name as customer_first_name',
+          'customer.last_name as customer_last_name',
+          'createdUser.username as created_by', // Alias for created_by user
+          'updatedUser.username as updated_by', // Alias for updated_by user
+        )
+        .leftJoin(
+          'user as createdUser',
+          'reservation.created_by',
+          'createdUser.id',
+        ) // Join for created_by
+        .leftJoin(
+          'user as updatedUser',
+          'reservation.updated_by',
+          'updatedUser.id',
+        ) // Join for updated_by
+        .leftJoin('car_model', 'reservation.car_model_id', 'car_model.id')
+        .leftJoin('car_type', 'reservation.car_type_id', 'car_type.id')
+        .leftJoin('color', 'reservation.color_id', 'color.id')
+        .leftJoin('service', 'reservation.service_id', 'service.id')
+        .leftJoin('customer', 'reservation.customer_id', 'customer.id')
+        .where('reservation.deleted', false)
+        .andWhere(function () {
+          if (from != '' && from && to != '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('reservation.date_time', [fromDate, toDate]);
+          }
+          if (search && search !== '') {
+            this.whereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [
+              `%${search}%`,
+            ])
+              .orWhere('customer.first_name', 'ilike', `%${search}%`)
+              .orWhere('customer.last_name', 'ilike', `%${search}%`)
+              .orWhere('service.name', 'ilike', `%${search}%`)
+              .orWhere('color.name', 'ilike', `%${search}%`)
+              .orWhere('car_model.name', 'ilike', `%${search}%`)
+              .orWhere('car_type.name', 'ilike', `%${search}%`);
+          }
+        })
+        .orderBy('price', 'desc');
+
+      let info = !search
+        ? await this.getReservationInformation(from, to)
+        : await this.getReservationInformationSearch(search);
+
+      return { sell, info };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async reservationPrint(
+    search: Search,
+    from: From,
+    to: To,
+    user_id: number,
+  ): Promise<Uint8Array> {
+    try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
+      let data = await this.reservationPrintData(search, from, to);
+
+      let { browser, page } = await generatePuppeteer({});
+
+      const htmlContent = `
+        <!DOCTYPE html>
+  <html lang="en">
+    <head>
+   ${pdfStyle}
+    </head>
+  
+    <body>
+      <p class="username">ڕاپۆرتی نۆرەکان</p>
+  
+        <div class="info_black">
+          <div class="infoRight">
+          <p>کۆی نرخی نۆرەکان ${formatMoney(data.info.total_price)}</p>
+      
+        </div>
+        <div class="infoLeft">
+           <p>کۆی نۆرەکان ${formatMoney(data.info.reservation_count)}</p>
+        
+       
+        </div>
+      
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ڕەنگ</th>
+            <th>مۆدێلی ئۆتۆمبێل</th>
+            <th>جۆری ئۆتۆمبێل</th>
+            <th>خزمەتگوزاری</th>
+            <th>بەروار و کات</th>
+            <th>نرخ</th>
+            <th>کڕیار</th>
+            <th>ژ.نۆرە</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+        ${data.sell
+          .map((val: ReservationReportData, _index: number) => {
+            return `
+            <tr>
+              <td>${val.color_name}</td>
+              <td>${val.car_model_name}</td>
+              <td>${val.car_type_name}</td>
+
+              <td>${val.service_name}</td>
+          
+              <td>${formateDateToYMDHM(val.date_time as string)}</td>
+              <td>${formatMoney(val.price)}</td>
+              <td>${val.customer_first_name + ' ' + val.customer_last_name}</td>
+              <td>${val.id}</td>
+            </tr>
+          `;
+          })
+          .join('')}
+        </tbody>
+      </table>
+    <div class="info_black">
+        <div class="infoLeft">
+          <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+        </div>
+        <div class="infoRight">
+          <p>${user.username} چاپکراوە لەلایەن</p>
+        </div>
+      </div>
+    </body>
+  </html>
+  
+        `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
       const pdfBuffer = await page.pdf(pdfBufferObject);

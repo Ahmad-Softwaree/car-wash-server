@@ -28,6 +28,7 @@ import {
   Expense,
   Item,
   ItemQuantityHistory,
+  Reservation,
   Sell,
   SellItem,
 } from 'database/types';
@@ -41,6 +42,7 @@ import {
   KogaAllReportInfo,
   KogaMovementReportInfo,
   KogaNullReportInfo,
+  ReservationReportInfo,
   SellReportInfo,
 } from 'src/types/report';
 
@@ -1228,6 +1230,148 @@ export class ReportController {
   ): Promise<Response<Uint8Array>> {
     try {
       let pdf = await this.reportService.casePrint(
+        search,
+        from,
+        to,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //RESERVATION REPORT
+  @PartName([ENUMs.RESERVATION_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Reservation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reservation retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Reservation not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('reservation')
+  async getReservation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('limit') limit: Limit,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<PaginationReturnType<Reservation[]>>> {
+    try {
+      let data: PaginationReturnType<Reservation[]> =
+        await this.reportService.getReservation(page, limit, from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.RESERVATION_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Reservation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reservation retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Reservation not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('reservation/information')
+  async getReservationInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<ReservationReportInfo>> {
+    try {
+      let data: ReservationReportInfo =
+        await this.reportService.getReservationInformation(from, to);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.RESERVATION_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Reservation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reservation retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Reservation not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('reservation_search')
+  async getReservationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<Reservation[]>> {
+    try {
+      let data: Reservation[] =
+        await this.reportService.getReservationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.RESERVATION_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Reservation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reservation retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Reservation not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('reservation_search/information')
+  async getReservationInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<ReservationReportInfo>> {
+    try {
+      let data: ReservationReportInfo =
+        await this.reportService.getReservationInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.RESERVATION_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Reservation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reservation retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Reservation not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('reservation/print')
+  async reservationPrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('search') search: Search,
+  ): Promise<Response<Uint8Array>> {
+    try {
+      let pdf = await this.reportService.reservationPrint(
         search,
         from,
         to,

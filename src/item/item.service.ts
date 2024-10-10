@@ -351,7 +351,7 @@ export class ItemService {
         let itemQuantity = await this.getItemQuantity(id);
         if (itemQuantity.actual_quantity - Number(data.quantity) < 0) {
           throw new BadRequestException(
-            'ناتوانی ئەم عەدەدە کەم کەیتەوە ئەبێتە سالب',
+            'ناتوانی ئەم عددە کەم کەیتەوە ئەبێتە سالب',
           );
         }
       }

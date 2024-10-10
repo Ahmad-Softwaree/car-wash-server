@@ -388,9 +388,9 @@ export class SellService {
       const minutes = today.getMinutes();
 
       const formattedDate = `${year} - ${month} - ${day} \t ${hours}:${minutes}`;
-      const MAX_HEIGHT = 480; // Set a maximum height (in pixels) for your PDF
+      const MAX_HEIGHT = 520; // Set a maximum height (in pixels) for your PDF
 
-      const calculateHeight = MAX_HEIGHT + 30 * sellItem.length;
+      const calculateHeight = MAX_HEIGHT + 40 * sellItem.length;
 
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
       if (sellItem.length > 0) {
@@ -418,7 +418,7 @@ export class SellService {
           <tr>
             <th>کۆ</th>
             <th>نرخ</th>
-            <th>عەدەد</th>
+            <th>عدد</th>
             <th>کاڵا</th>
           </tr>
         </thead>
@@ -438,9 +438,9 @@ export class SellService {
       </table>
       <div class="info_black">
         <p>ژمارەی کاڵا : ${sellItem.length}</p>
-        <p>ژ.نرخی گشتی : ${formatMoney(totalSellPrice)}</p>
+        <p>نرخی گشتی : ${formatMoney(totalSellPrice)}</p>
         <p>داشکاندن : ${formatMoney(sell.discount)}</p>
-        <p>ژ.نرخی دوای داشکان : ${formatMoney(totalSellPrice - sell.discount)}</p>
+        <p>نرخی دوای داشکان : ${formatMoney(totalSellPrice - sell.discount)}</p>
       </div>
     </div>
   </body>
@@ -499,7 +499,7 @@ export class SellService {
       );
       if (1 > itemQuantity.actual_quantity) {
         throw new BadRequestException(
-          'ناتوانی ئەم عەدەدە زیادکەی، بڕی پێویست نیە لە کۆگا',
+          'ناتوانی ئەم عددە زیادکەی، بڕی پێویست نیە لە کۆگا',
         );
       }
       let initialSell: Sell;
@@ -551,7 +551,7 @@ export class SellService {
       let itemQuantity = await this.itemService.getItemQuantity(item_id);
       if (body.quantity > itemQuantity.actual_quantity) {
         throw new BadRequestException(
-          'ناتوانی ئەم عەدەدە زیادکەی، بڕی پێویست نیە لە کۆگا',
+          'ناتوانی ئەم عددە زیادکەی، بڕی پێویست نیە لە کۆگا',
         );
       }
       let prevQuantity: Pick<SellItem, 'id' | 'quantity'> =
@@ -586,7 +586,7 @@ export class SellService {
       let itemQuantity = await this.itemService.getItemQuantity(item_id);
       if (itemQuantity.actual_quantity == 0) {
         throw new BadRequestException(
-          'ناتوانی ئەم عەدەدە زیادکەی، بڕی پێویست نیە لە کۆگا',
+          'ناتوانی ئەم عددە زیادکەی، بڕی پێویست نیە لە کۆگا',
         );
       }
       let previousItemData: Pick<SellItem, 'id' | 'quantity'> =
@@ -623,7 +623,7 @@ export class SellService {
       let itemQuantity = await this.itemService.getItemQuantity(item_id);
       if (itemQuantity.actual_quantity == 0) {
         throw new BadRequestException(
-          'ناتوانی ئەم عەدەدە زیادکەی، بڕی پێویست نیە لە کۆگا',
+          'ناتوانی ئەم عددە زیادکەی، بڕی پێویست نیە لە کۆگا',
         );
       }
       let previousItemData: Pick<SellItem, 'id' | 'quantity'> =
