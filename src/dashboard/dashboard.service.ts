@@ -97,6 +97,9 @@ export class DashboardService {
           ),
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
+        .where('sell.deleted', false)
+        .andWhere('sell_item.deleted', false)
+        .andWhere('sell_item.self_deleted', false)
         .limit(50)
         .groupBy('sell.id')
         .orderBy('sell.id', 'asc');
@@ -121,6 +124,7 @@ export class DashboardService {
             'item.name as item_name',
           )
           .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
+          .where('item_quantity_history.deleted', false)
           .limit(50)
           .groupBy('item_quantity_history.id', 'item.id')
           .orderBy('item_quantity_history.id', 'asc');
@@ -138,6 +142,7 @@ export class DashboardService {
             'COALESCE(SUM(CASE WHEN item_quantity_history.quantity < 0 THEN ABS(item_quantity_history.quantity) ELSE 0 END), 0) as decrease_history',
           ),
         )
+        .where('deleted', false)
 
         .first<{ increase_history: number; decrease_history: number }>();
 
