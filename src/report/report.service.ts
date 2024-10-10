@@ -3151,7 +3151,7 @@ ${data.item
             this.whereBetween('reservation.date_time', [fromDate, toDate]);
           }
         })
-        .orderBy('price', 'desc')
+        .orderBy('id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
       const { hasNextPage } = await generatePaginationInfo<Reservation>(
@@ -3238,7 +3238,7 @@ ${data.item
             .orWhere('car_model.name', 'ilike', `%${search}%`)
             .orWhere('car_type.name', 'ilike', `%${search}%`);
         })
-        .orderBy('price', 'desc');
+        .orderBy('id', 'desc');
 
       return sell;
     } catch (error) {
@@ -3337,7 +3337,7 @@ ${data.item
               .orWhere('car_type.name', 'ilike', `%${search}%`);
           }
         })
-        .orderBy('price', 'desc');
+        .orderBy('id', 'desc');
 
       let info = !search
         ? await this.getReservationInformation(from, to)
