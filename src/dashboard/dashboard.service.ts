@@ -30,7 +30,8 @@ export class DashboardService {
       const users: string = await this.knex<User>('user')
         .where('deleted', false)
         .count('id as count')
-        .first();
+        .first()
+        .then((res: any) => res.count);
 
       // Count of items with deleted counts
       const item: string = await this.knex<Item>('item')
