@@ -16,8 +16,6 @@ async function truncateAllTables() {
       }
     }
   });
-
-  console.log('All tables truncated successfully.');
 }
 
 /**

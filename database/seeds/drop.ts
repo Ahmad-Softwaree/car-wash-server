@@ -12,8 +12,6 @@ async function dropAllTables() {
       await trx.raw(`DROP TABLE IF EXISTS "${tablename}" CASCADE`);
     }
   });
-
-  console.log('All tables dropped successfully.');
 }
 
 /**
