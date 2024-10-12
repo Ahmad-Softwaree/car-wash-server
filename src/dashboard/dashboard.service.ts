@@ -77,7 +77,7 @@ export class DashboardService {
         .where('reservation.deleted', false)
         .leftJoin('customer', 'reservation.customer_id', 'customer.id')
         .limit(50)
-        .orderBy('id', 'asc');
+        .orderBy('id', 'desc');
 
       let total_reservation_price: { total_reservation_price: number } =
         await this.knex<Reservation>('reservation')
@@ -103,7 +103,7 @@ export class DashboardService {
         .andWhere('sell_item.self_deleted', false)
         .limit(50)
         .groupBy('sell.id')
-        .orderBy('sell.id', 'asc');
+        .orderBy('sell.id', 'desc');
 
       let total_sell_price: { total_sell_price: number } =
         await this.knex<SellItem>('sell_item')
@@ -128,7 +128,7 @@ export class DashboardService {
           .where('item_quantity_history.deleted', false)
           .limit(50)
           .groupBy('item_quantity_history.id', 'item.id')
-          .orderBy('item_quantity_history.id', 'asc');
+          .orderBy('item_quantity_history.id', 'desc');
 
       let total_history: {
         increase_history: number;
