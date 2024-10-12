@@ -147,7 +147,7 @@ export class ExpenseService {
         .where('expense.deleted', false)
         .first();
       if (!expense) {
-        throw new NotFoundException(`ExpenseWithType with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return expense;
@@ -186,7 +186,7 @@ export class ExpenseService {
         .returning('*');
 
       if (result.length === 0) {
-        throw new NotFoundException(`ExpenseWithType with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return result[0];

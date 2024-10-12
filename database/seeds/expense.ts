@@ -8,7 +8,7 @@ import { Knex } from 'knex';
 const seed = async function (knex: Knex) {
   const expenseTypes = await knex.table('expense_type').select('id');
 
-  const expenses = Array.from({ length: 100 }, () => ({
+  const expenses = Array.from({ length: 10 }, () => ({
     price: faker.number.int({ min: 1, max: 1000 }),
     type_id: faker.helpers.arrayElement(expenseTypes).id, // Randomly assign an expense type
     created_by: 1,

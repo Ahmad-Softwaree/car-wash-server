@@ -189,7 +189,7 @@ export class ServiceService {
         .returning('*');
 
       if (service.length === 0) {
-        throw new NotFoundException(`Service with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return service[0];

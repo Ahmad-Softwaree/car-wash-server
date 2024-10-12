@@ -256,7 +256,7 @@ export class RoleService {
         .returning('*');
 
       if (role.length === 0) {
-        throw new NotFoundException(`Role with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       //we have to delete all the preview role part before insert these

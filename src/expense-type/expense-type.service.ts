@@ -192,7 +192,7 @@ export class ExpenseTypeService {
         .returning('*');
 
       if (expenseType.length === 0) {
-        throw new NotFoundException(`ExpenseType with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return expenseType[0];

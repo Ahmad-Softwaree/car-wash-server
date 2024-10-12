@@ -287,7 +287,7 @@ export class ItemService {
         .first();
 
       if (!item) {
-        throw new NotFoundException(`ItemWithType with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
       return item;
     } catch (error) {
@@ -324,7 +324,7 @@ export class ItemService {
         .returning('*');
 
       if (result.length === 0) {
-        throw new NotFoundException(`ItemWithType with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
       return result[0];
     } catch (error) {
@@ -367,7 +367,7 @@ export class ItemService {
         .returning('*');
 
       if (result.length === 0) {
-        throw new NotFoundException(`Item with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       //save the history

@@ -189,7 +189,7 @@ export class CarTypeService {
         .returning('*');
 
       if (carType.length === 0) {
-        throw new NotFoundException(`CarType with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return carType[0];

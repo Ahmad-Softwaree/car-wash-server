@@ -170,7 +170,7 @@ export class UserService {
         .andWhere('user.deleted', false)
         .first();
       if (!user) {
-        throw new NotFoundException(`User with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
       let userParts: UserPartWithPartJoin[] =
         await this.userPartService.findUserParts(user.id);
@@ -196,7 +196,7 @@ export class UserService {
         .andWhere('user.deleted', false)
         .first();
       if (!user) {
-        throw new NotFoundException(`User with username ${username} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       let userParts: UserPartWithPartJoin[] =
@@ -327,7 +327,7 @@ export class UserService {
         });
       }
       if (result.length === 0) {
-        throw new NotFoundException(`User with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return result[0];

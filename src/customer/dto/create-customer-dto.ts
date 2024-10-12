@@ -14,9 +14,6 @@ export default class CreateCustomerDto {
   })
   @IsString({ message: 'ناوی یەکەم دەبێت ڕشتە بێت' })
   @IsNotEmpty({ message: 'ناوی یەکەم پێویستە' })
-  @Matches(/^[a-zA-Z\s]+$/, {
-    message: 'ناو تەنها دەتوانێت پیت و بۆشایی لەخۆ بگرێت',
-  })
   first_name: string;
 
   @ApiProperty({
@@ -25,9 +22,6 @@ export default class CreateCustomerDto {
   })
   @IsString({ message: 'ناوی دووەم دەبێت ڕشتە بێت' })
   @IsNotEmpty({ message: 'ناوی دووەم پێویستە' })
-  @Matches(/^[a-zA-Z\s]+$/, {
-    message: 'ناو تەنها دەتوانێت پیت و بۆشایی لەخۆ بگرێت',
-  })
   last_name: string;
 
   @ApiProperty({

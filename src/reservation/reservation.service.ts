@@ -280,7 +280,7 @@ export class ReservationService {
         .andWhere('reservation.deleted', false)
         .first();
       if (!reservation) {
-        throw new NotFoundException(`Reservation with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return reservation;
@@ -434,7 +434,7 @@ export class ReservationService {
         .returning('*');
 
       if (result.length === 0) {
-        throw new NotFoundException(`Reservation with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return result[0];

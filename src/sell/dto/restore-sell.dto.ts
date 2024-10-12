@@ -6,8 +6,8 @@ export class RestoreSellDto {
     example: [1, 2, 3],
     description: 'Array of item IDs',
   })
-  @IsArray({ message: 'item_ids must be an array' })
-  @IsNumber({}, { each: true, message: 'Each item_id must be a number' })
+  @IsArray({ message: 'ناسنامەکانی کاڵا دەبێت لیستێک بن' })
+  @IsNumber({}, { each: true, message: 'هەر ناسنامەیەکی کاڵا دەبێت ژمارە بێت' })
   @IsOptional()
   item_ids: number[];
 }

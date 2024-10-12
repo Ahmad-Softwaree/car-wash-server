@@ -23,7 +23,7 @@ export class UserPartService {
       let user = await this.userServices.checkUserExistById(id);
 
       if (!user) {
-        throw new NotFoundException('user not found');
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
       let parts = await this.knex<UserPart>('user_part')
         .select('user_part.id', 'user_part.part_id', 'part.name')

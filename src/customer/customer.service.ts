@@ -169,7 +169,7 @@ export class CustomerService {
         .andWhere('deleted', false)
         .first();
       if (!customer) {
-        throw new NotFoundException(`Customer with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return customer;
@@ -265,7 +265,7 @@ export class CustomerService {
         .returning('*');
 
       if (result.length === 0) {
-        throw new NotFoundException(`Customer with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return result[0];

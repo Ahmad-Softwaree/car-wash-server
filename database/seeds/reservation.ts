@@ -5,7 +5,7 @@
 import { faker } from '@faker-js/faker';
 import { Knex } from 'knex';
 
-const reservations = Array.from({ length: 100 }, () => ({
+const reservations = Array.from({ length: 10 }, () => ({
   customer_id: faker.number.int({ min: 1, max: 50 }), // Assuming 50 customers
   color_id: faker.number.int({ min: 1, max: 10 }), // Assuming 10 colors
   service_id: faker.number.int({ min: 1, max: 5 }), // Assuming 5 services

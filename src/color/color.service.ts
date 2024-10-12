@@ -189,7 +189,7 @@ export class ColorService {
         .returning('*');
 
       if (color.length === 0) {
-        throw new NotFoundException(`Color with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return color[0];

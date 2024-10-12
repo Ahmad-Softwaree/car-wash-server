@@ -189,7 +189,7 @@ export class ItemTypeService {
         .returning('*');
 
       if (itemType.length === 0) {
-        throw new NotFoundException(`ItemType with ID ${id} not found`);
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
       }
 
       return itemType[0];
