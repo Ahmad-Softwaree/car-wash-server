@@ -16,8 +16,6 @@ let users = [
     username: 'ahmadSoftware',
     password: 'aghlqtyo',
     phone: '07701993085',
-    street: 'tuy malik',
-    city_id: 1,
     role_id: 1,
     created_at: new Date(),
     updated_at: new Date(),
