@@ -31,6 +31,7 @@ import { BackupModule } from './backup/backup.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportModule } from './report/report.module';
 import { PrinterModule } from './printer/printer.module';
+import { ConfigModule as MyConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { PrinterModule } from './printer/printer.module';
     ItemModule,
     ItemTypeModule,
     SellModule,
+    MyConfigModule,
     ReservationModule,
     BackupModule,
     DashboardModule,

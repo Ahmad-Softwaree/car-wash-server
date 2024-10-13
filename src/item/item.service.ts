@@ -20,7 +20,7 @@ import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
 import { CreateItemDto } from './dto/create-item-dto';
 import { UpdateItemDto } from './dto/update-item-dto';
 import { ItemWithType } from 'src/types/item';
-import { Item, ItemQuantityHistory, SellItem } from 'database/types';
+import { Config, Item, ItemQuantityHistory, SellItem } from 'database/types';
 import { ChangeItemQuantityDto } from './dto/change-item-quantity-dto';
 
 @Injectable()
@@ -52,6 +52,136 @@ export class ItemService {
         .first();
 
       return quantity;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getLess(
+    page: Page,
+    limit: Limit,
+    from: From,
+    to: To,
+  ): Promise<PaginationReturnType<Item[]>> {
+    try {
+      let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
+        'config',
+      )
+        .select('item_less_from')
+        .first();
+      console.log(config);
+      const items: Item[] = await this.knex<Item>('item')
+        .select(
+          'item.*',
+
+          'createdUser.username as created_by', // Alias for created_by user
+          'updatedUser.username as updated_by', // Alias for updated_by user
+          this.knex.raw(
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
+          ),
+        )
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('sell_item', (join) => {
+          join
+            .on('item.id', 'sell_item.item_id')
+            .andOn('sell_item.deleted', '=', this.knex.raw('false'));
+        })
+
+        .where('item.deleted', false)
+        .havingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+        ${config.item_less_from}`,
+        ) // Use "havingRaw" because of the aggregate function
+        .andWhere(function () {
+          if (from != '' && from && to != '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('item.created_at', [fromDate, toDate]);
+          }
+        })
+        .groupBy(
+          'item.id', // Include primary key
+          'item.name', // Select specific columns from item
+          'item.created_at',
+          'item.deleted',
+          'item.quantity',
+          'createdUser.username',
+          'updatedUser.username',
+        )
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .orderBy('item.id', 'desc');
+
+      const { hasNextPage } = await generatePaginationInfo(
+        this.knex<Item>('item'),
+        page,
+        limit,
+        false,
+        false,
+      );
+
+      return {
+        paginatedData: items,
+        meta: {
+          nextPageUrl: hasNextPage
+            ? `/localhost:3001?page=${Number(page) + 1}&limit=${limit}`
+            : null,
+          total: items.length,
+        },
+      };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+  async searchLess(search: Search): Promise<Item[]> {
+    try {
+      let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
+        'config',
+      )
+        .select('item_less_from')
+        .first();
+      const items: Item[] = await this.knex<Item>('item')
+        .select(
+          'item.*',
+          'createdUser.username as created_by', // Alias for created_by user
+          'updatedUser.username as updated_by', // Alias for updated_by user
+          this.knex.raw(
+            'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
+          ),
+        )
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('sell_item', (join) => {
+          join
+            .on('item.id', 'sell_item.item_id')
+            .andOn('sell_item.deleted', '=', this.knex.raw('false'));
+        })
+        .where('item.deleted', false)
+        .havingRaw(
+          'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) < ?',
+          [config.item_less_from],
+        ) // Use "havingRaw" because of the aggregate function
+        .andWhere(function () {
+          this.where('item.name', 'ilike', `%${search}%`).orWhere(
+            'item.barcode',
+            'ilike',
+            `%${search}%`,
+          );
+        })
+        .groupBy(
+          'item.id', // Include primary key
+          'item.name', // Select specific columns from item
+          'item.created_at',
+          'item.deleted',
+          'item.quantity',
+
+          'createdUser.username',
+          'updatedUser.username',
+        )
+        .limit(30);
+
+      return items;
     } catch (error) {
       throw new Error(error.message);
     }

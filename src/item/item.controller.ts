@@ -46,6 +46,57 @@ import { Item } from 'database/types';
 @Controller('item')
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
+
+  @PartName([ENUMs.KOGA_PART as string])
+  @ApiOperation({ summary: 'Get All Items' })
+  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Items not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('/less')
+  async getLess(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('limit') limit: Limit,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<PaginationReturnType<Item[]>>> {
+    try {
+      let items: PaginationReturnType<Item[]> = await this.itemService.getLess(
+        page,
+        limit,
+        from,
+        to,
+      );
+      return res.status(HttpStatus.OK).json(items);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_PART as string])
+  @ApiOperation({ summary: 'Search Items' })
+  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Items not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('/search_less')
+  async searchLess(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<Item[]>> {
+    try {
+      let items: Item[] = await this.itemService.searchLess(search);
+      return res.status(HttpStatus.OK).json(items);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
   @PartName([ENUMs.KOGA_PART as string])
   @ApiOperation({ summary: 'Get All Items' })
   @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })

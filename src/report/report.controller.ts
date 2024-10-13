@@ -37,6 +37,7 @@ import {
   CaseReport,
   CaseReportInfo,
   ExpenseReportInfo,
+  GlobalCaseInfo,
   ItemProfitReportInfo,
   ItemReportInfo,
   KogaAllReportInfo,
@@ -1242,6 +1243,34 @@ export class ReportController {
       });
 
       res.end(pdf);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //GLOBAL CASE DATA
+
+  @PartName([ENUMs.CASE_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get All Case' })
+  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Case not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('case/global')
+  async getGlobalCaseInfo(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<GlobalCaseInfo>> {
+    try {
+      let data: GlobalCaseInfo = await this.reportService.getGlobalCaseInfo(
+        from,
+        to,
+      );
+
+      return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

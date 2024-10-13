@@ -19,6 +19,12 @@ export type CaseReportInfo = {
   total_quantity: number;
   total_sell_price: number;
 };
+export type GlobalCaseInfo = {
+  total_money: number;
+  total_sell: number;
+  total_expense: number;
+  remain_money: number;
+};
 
 export type CaseReportData = CaseReport & {
   total_quantity: number;

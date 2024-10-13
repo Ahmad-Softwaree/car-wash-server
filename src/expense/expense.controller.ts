@@ -97,6 +97,48 @@ export class ExpenseController {
     }
   }
 
+  @PartName([ENUMs.USERS_PART as string])
+  @ApiOperation({ summary: 'Search Expenses' })
+  @ApiResponse({ status: 200, description: 'Expenses retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Expenses not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('/search')
+  async search(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<ExpenseWithType[]>> {
+    try {
+      let users: ExpenseWithType[] = await this.expenseService.search(search);
+      return res.status(HttpStatus.OK).json(users);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+  @PartName([ENUMs.USERS_PART as string])
+  @ApiOperation({ summary: 'Search Expenses' })
+  @ApiResponse({ status: 200, description: 'Expenses retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Expenses not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('/deleted_search')
+  async deletedSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<ExpenseWithType[]>> {
+    try {
+      let users: ExpenseWithType[] =
+        await this.expenseService.deletedSearch(search);
+      return res.status(HttpStatus.OK).json(users);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
   @PartName([ENUMs.EXPENSES_PART as string])
   @ApiOperation({ summary: 'Get Expense By Id' })
   @ApiParam({ name: 'id', description: 'Expense ID', example: 1 })

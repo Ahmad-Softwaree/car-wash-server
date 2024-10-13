@@ -342,6 +342,16 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
       table.boolean('active').defaultTo(false);
       table.boolean('deleted').defaultTo(false);
       table.timestamps({ defaultToNow: true });
+    })
+    .createTable('config', (table) => {
+      table.increments('id').primary();
+      table.integer('item_less_from').defaultTo(15);
+      table.float('initial_money').defaultTo(0);
+      table.boolean('items_print_modal').defaultTo(false);
+      table.boolean('pos_print_modal').defaultTo(false);
+      table.boolean('report_print_modal').defaultTo(false);
+      table.boolean('deleted').defaultTo(false);
+      table.timestamps({ defaultToNow: true });
     });
 };
 

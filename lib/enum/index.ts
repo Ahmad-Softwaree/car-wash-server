@@ -24,8 +24,10 @@ export type ENUM_TYPES =
   | 'KOGA_REPORT_PART'
   | 'PROFIT_REPORT_PART'
   | 'CASE_REPORT_PART'
+  | 'LESS_ITEM_PART'
   | 'EXPENSE_REPORT_PART'
-  | 'PRINTER_PART';
+  | 'PRINTER_PART'
+  | 'CONFIG_PART';
 
 export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
   //GLOBAL
@@ -44,6 +46,7 @@ export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
   KOGA_PART: 'کۆگا',
   CREATE_PSULA_PART: 'پسولەی فرۆشتن',
   SELL_PART: 'پسولەکان',
+  LESS_ITEM_PART: 'مەوادی کەمبوو',
   RESERVATION_PART: 'نۆرەکان',
   NORMAL_BACKUP_PART: 'باکئەپی ئاسایی',
   SERVER_BACKUP_PART: 'باکئەپی سێرڤەر',
@@ -55,4 +58,5 @@ export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
   EXPENSE_REPORT_PART: 'ڕاپۆرتی خەرجی',
   PRINTER_PART: 'پرینتەرەکان',
   KOGA_REPORT_PART: 'ڕاپۆرتی کۆگا',
+  CONFIG_PART: 'ڕێکخستن',
 };

@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import * as printer from 'pdf-to-printer';
-import { Item, Printer, Sell, SellItem, User } from 'database/types';
+import { Config, Item, Printer, Sell, SellItem, User } from 'database/types';
 import { Knex } from 'knex';
 import {
   From,
@@ -349,8 +349,25 @@ export class SellService {
       throw new Error(error.message);
     }
   }
-  async print(sell_id: Id, res: Response, user_id: number): Promise<string> {
+  async print(
+    sell_id: Id,
+    user_id: number,
+    where: 'pos' | 'items',
+  ): Promise<{
+    data: string | Uint8Array;
+    items_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'items_print_modal' | 'pos_print_modal'> =
+        await this.knex<Config>('config')
+          .select('items_print_modal', 'pos_print_modal')
+          .first();
+      let flag = false;
+      if (where == 'items') {
+        flag = config.items_print_modal;
+      } else {
+        flag = config.items_print_modal;
+      }
       let activePrinter = await this.knex<Printer>('printer')
         .where('active', true)
         .first();
@@ -359,8 +376,6 @@ export class SellService {
         throw new BadRequestException('تکایە لە ڕێکخسنت پرینتەرێک چالاک بکە');
       }
 
-      let logoImage = readFileSync(join(__dirname, '../../../assets/logo.jpg'));
-      let baseImage = Buffer.from(logoImage).toString('base64');
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -461,13 +476,32 @@ export class SellService {
             left: '0mm',
           },
         });
-        const jobId = await printer.print(pdfPath, {
-          printer: activePrinter.name,
-        });
+        if (!flag) {
+          let jobId = await printer.print(pdfPath, {
+            printer: activePrinter.name,
+          });
+          if (jobId == undefined || jobId == null) {
+            unlinkSync(pdfPath);
+            await browser.close();
+            return {
+              data: pdfBuffer,
+              items_print_modal: true,
+            };
+          }
+        }
 
         unlinkSync(pdfPath);
         await browser.close();
-        return 'success';
+        if (flag) {
+          return {
+            data: pdfBuffer,
+            items_print_modal: flag,
+          };
+        }
+        return {
+          data: 'success',
+          items_print_modal: flag,
+        };
       } else {
         throw new BadRequestException('مواد داخڵ کە بۆ سەر وەصڵ');
       }

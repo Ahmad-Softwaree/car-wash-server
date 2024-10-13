@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  Config,
   Expense,
   Item,
   ItemQuantityHistory,
@@ -39,6 +40,7 @@ import {
   CaseReportInfo,
   ExpenseReportData,
   ExpenseReportInfo,
+  GlobalCaseInfo,
   ItemProfitReportData,
   ItemProfitReportInfo,
   ItemReportData,
@@ -3108,7 +3110,58 @@ ${data.item
     }
   }
 
-  //CASE REPORT
+  //GLOBAL CASE INFO
+  async getGlobalCaseInfo(from: From, to: To): Promise<GlobalCaseInfo> {
+    try {
+      let initialMoney: Pick<Config, 'initial_money'> = await this.knex<Config>(
+        'config',
+      )
+        .select('initial_money')
+        .first();
+      let sells: { total_money: number } = await this.knex<SellItem>(
+        'sell_item',
+      )
+        .select(
+          this.knex.raw(
+            'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_money',
+          ), // Sum of item_sell_price
+        )
+        .where(function () {
+          if (from !== '' && from && to !== '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere('deleted', false)
+        .first<{ total_money: number }>();
+      let expenses: { total_expense: number } = await this.knex<Expense>(
+        'expense',
+      )
+        .select(
+          this.knex.raw('COALESCE(SUM(expense.price), 0) as total_expense'), // Sum of item_sell_price
+        )
+        .where(function () {
+          if (from !== '' && from && to !== '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere('deleted', false)
+        .first<{ total_expense: number }>();
+      let total_money = Number(initialMoney.initial_money);
+      let total_sell = sells.total_money;
+      let total_expense = expenses.total_expense;
+      let remain_money = Number(total_money) - Number(total_expense);
+
+      return { total_money, total_sell, total_expense, remain_money };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  //RESERVATION REPORT
   async getReservation(
     page: Page,
     limit: Limit,
