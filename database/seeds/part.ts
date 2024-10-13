@@ -36,6 +36,14 @@ export const parts = [
     created_at: new Date(),
   },
   {
+    name: 'ڕێکخستن',
+    created_at: new Date(),
+  },
+  {
+    name: 'مەوادی کەمبوو',
+    created_at: new Date(),
+  },
+  {
     name: 'ڕاپۆرتی فرۆشتن',
     created_at: new Date(),
   },
