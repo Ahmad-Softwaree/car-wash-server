@@ -30,6 +30,7 @@
     "seed:role-part": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=role-part.ts",
     "seed:user": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=user.ts",
     "seed:reservation": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=reservation.ts",
+    "seed:config": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=config.ts",
     "seed:customer": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=customer.ts",
     "seed:user-part": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=user-part.ts",
     "seed:expense": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=expense.ts",
@@ -40,7 +41,7 @@
     "seed:car_model": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=car_model.ts",
     "seed:item_history": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=item_history.ts",
     "seed:item": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=item.ts",
-    "seed:all": "npm run delete-tables && npm run seed:role && npm run seed:part && npm run seed:role-part && npm run seed:user && npm run seed:user-part && npm run seed:car_model && npm run seed:car_type && npm run seed:item_type && npm run seed:color && npm run seed:expense_type && npm run seed:customer && npm run seed:expense && npm run seed:service && npm run seed:item && npm run seed:reservation && npm run seed:item_history",
+    "seed:all": "npm run delete-tables && npm run seed:role && npm run seed:part && npm run seed:role-part && npm run seed:user && npm run seed:user-part && npm run seed:car_model && npm run seed:car_type && npm run seed:item_type && npm run seed:color && npm run seed:expense_type && npm run seed:customer && npm run seed:expense && npm run seed:service && npm run seed:item && npm run seed:reservation && npm run seed:item_history && npm run seed:config ",
     "pg-types": "npx knex-types generate --client=pg --connection=postgresql://postgres:postgres@localhost:5432/raha_auto_spa_system --out=./database/types.ts",
     "pg-types-2": "npx knex-types --config ./database/knexfile.ts --output ./database/types.ts"
   },
