@@ -87,6 +87,11 @@ export class ReservationService {
     limit: Limit,
     date: Date,
     filter: Filter,
+    colorFilter: Filter,
+    carModelFilter: Filter,
+    carTypeFilter: Filter,
+    serviceFilter: Filter,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Reservation[]>> {
     try {
       let validDate: Date;
@@ -141,6 +146,24 @@ export class ReservationService {
             .andWhereRaw('EXTRACT(DAY FROM reservation.date_time) = ?', [day]);
         })
         .andWhere(function () {
+          if (colorFilter != '' && colorFilter) {
+            this.where('color.id', colorFilter);
+          }
+          if (carModelFilter != '' && carModelFilter) {
+            this.where('car_model.id', carModelFilter);
+          }
+          if (carTypeFilter != '' && carTypeFilter) {
+            this.where('car_type.id', carTypeFilter);
+          }
+          if (serviceFilter != '' && serviceFilter) {
+            this.where('service.id', serviceFilter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
           if (filter != '' && filter) {
             if (filter == 'all') return true;
             if (filter == 'completed') {
@@ -182,6 +205,12 @@ export class ReservationService {
     limit: Limit,
     from: From,
     to: To,
+    filter: Filter,
+    colorFilter: Filter,
+    carModelFilter: Filter,
+    carTypeFilter: Filter,
+    serviceFilter: Filter,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Reservation[]>> {
     try {
       const reservations: Reservation[] = await this.knex<Reservation>(
@@ -220,6 +249,35 @@ export class ReservationService {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('reservation.date_time', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (colorFilter != '' && colorFilter) {
+            this.where('color.id', colorFilter);
+          }
+          if (carModelFilter != '' && carModelFilter) {
+            this.where('car_model.id', carModelFilter);
+          }
+          if (carTypeFilter != '' && carTypeFilter) {
+            this.where('car_type.id', carTypeFilter);
+          }
+          if (serviceFilter != '' && serviceFilter) {
+            this.where('service.id', serviceFilter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+          if (filter != '' && filter) {
+            if (filter == 'all') return true;
+            if (filter == 'completed') {
+              return this.where('reservation.completed', true);
+            }
+            if (filter == 'not_completed') {
+              return this.where('reservation.completed', false);
+            }
           }
         })
         .limit(limit)

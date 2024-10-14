@@ -3,6 +3,7 @@ import * as printer from 'pdf-to-printer';
 import { Config, Item, Printer, Sell, SellItem, User } from 'database/types';
 import { Knex } from 'knex';
 import {
+  Filter,
   From,
   Id,
   Limit,
@@ -44,6 +45,7 @@ export class SellService {
   async getAll(
     page: Page,
     limit: Limit,
+    userFilter: Filter,
     from: From,
     to: To,
   ): Promise<PaginationReturnType<Sell[]>> {
@@ -63,6 +65,12 @@ export class SellService {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .limit(limit)
@@ -90,6 +98,7 @@ export class SellService {
   async getAllDeleted(
     page: Page,
     limit: Limit,
+    userFilter: Filter,
     from: From,
     to: To,
   ): Promise<PaginationReturnType<Sell[]>> {
@@ -109,6 +118,12 @@ export class SellService {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .limit(limit)
@@ -225,7 +240,10 @@ export class SellService {
     }
   }
 
-  async getDeletedSellItems(sell_id: Id): Promise<SellItem[]> {
+  async getDeletedSellItems(
+    sell_id: Id,
+    userFilter: Filter,
+  ): Promise<SellItem[]> {
     try {
       const sellItems: SellItem[] = await this.knex<SellItem>('sell_item')
         .select(
@@ -248,7 +266,15 @@ export class SellService {
         )
         .where('sell_item.sell_id', sell_id)
         .andWhere('sell_item.deleted', true)
-        .andWhere('sell_item.self_deleted', true);
+        .andWhere('sell_item.self_deleted', true)
+        .andWhere(function () {
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        });
 
       return sellItems;
     } catch (error) {
@@ -258,6 +284,7 @@ export class SellService {
   async getSelfDeletedSellItems(
     page: Page,
     limit: Limit,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<SellItem[]>> {
     try {
       const sellItems: SellItem[] = await this.knex<SellItem>('sell_item')
@@ -281,6 +308,14 @@ export class SellService {
         )
         .andWhere('sell_item.deleted', false)
         .andWhere('sell_item.self_deleted', true)
+        .andWhere(function () {
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
         .offset((page - 1) * limit)
         .limit(limit);
 

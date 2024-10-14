@@ -170,6 +170,7 @@ export type Item = {
   type_name: string;
   quantity: number;
   item_purchase_price: number;
+  item_less_from: number;
   item_sell_price: number;
   image_name: string;
   image_url: string;

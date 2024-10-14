@@ -47,6 +47,8 @@ import {
   ItemReportInfo,
   KogaAllReportData,
   KogaAllReportInfo,
+  KogaLessReportData,
+  KogaLessReportInfo,
   KogaMovementReportData,
   KogaMovementReportInfo,
   KogaNullReportData,
@@ -1440,6 +1442,390 @@ ${data.item
 </html>
 
       `;
+      await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
+      const pdfBuffer = await page.pdf(pdfBufferObject);
+
+      await browser.close();
+
+      return pdfBuffer;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  //KOGA NULL REPORT
+
+  async getKogaLess(
+    page: Page,
+    limit: Limit,
+    filter: Filter,
+  ): Promise<PaginationReturnType<Item[]>> {
+    try {
+      let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
+        'config',
+      )
+        .select('item_less_from')
+        .first();
+      const items: Item[] = await this.knex<Item>('item')
+        .select(
+          'item.*',
+          'item_type.id as type_id',
+          'item_type.name as type_name',
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
+        )
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .where('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
+        .andWhere(function () {
+          if (filter && filter != '') {
+            this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
+              `%${filter}%`,
+            ]);
+          }
+        })
+        .groupBy(
+          'item.id',
+          'item_type.id',
+          'createdUser.username',
+          'updatedUser.username',
+        )
+        .havingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+          ${config.item_less_from}`,
+        )
+        .orHavingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+            item.item_less_from`,
+        )
+
+        .orderBy('item.id', 'desc')
+        .offset((page - 1) * limit)
+        .limit(limit);
+
+      const { hasNextPage } = await generatePaginationInfo<Item>(
+        this.knex<Item>('item'),
+        page,
+        limit,
+        false,
+      );
+
+      return {
+        paginatedData: items,
+        meta: {
+          nextPageUrl: hasNextPage
+            ? `/localhost:3001?page=${Number(page) + 1}&limit=${limit}`
+            : null,
+          total: items.length,
+        },
+      };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getKogaLessInformation(filter: Filter): Promise<KogaLessReportInfo> {
+    try {
+      let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
+        'config',
+      )
+        .select('item_less_from')
+        .first();
+      const itemData: any = await this.knex<Item>('item')
+        .select(this.knex.raw('COUNT(DISTINCT item.id) as total_count'))
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .where(function () {
+          if (filter && filter != '') {
+            this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
+              `%${filter}%`,
+            ]);
+          }
+        })
+        .andWhere('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
+        .andWhere(function () {
+          this.andWhereRaw(
+            `item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= ${config.item_less_from}`,
+          ).orWhereRaw(
+            `item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= item.item_less_from`,
+          );
+        });
+
+      return itemData[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getKogaLessSearch(search: Search): Promise<Item[]> {
+    try {
+      let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
+        'config',
+      )
+        .select('item_less_from')
+        .first();
+      const item: Item[] = await this.knex<Item>('item')
+        .select(
+          'item.*',
+          'item_type.id as type_id',
+          'item_type.name as type_name',
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
+        )
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .where('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
+        .andWhere(function () {
+          if (search && search !== '') {
+            this.where('createdUser.username', 'ilike', `%${search}%`)
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
+          }
+        })
+        .groupBy(
+          'item.id',
+          'item_type.id',
+          'createdUser.username',
+          'updatedUser.username',
+        )
+        .havingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+        ${config.item_less_from}`,
+        )
+        .orHavingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+          item.item_less_from`,
+        )
+        .orderBy('item.id', 'desc');
+
+      return item;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getKogaLessInformationSearch(
+    search: Search,
+  ): Promise<KogaLessReportInfo> {
+    try {
+      let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
+        'config',
+      )
+        .select('item_less_from')
+        .first();
+      const itemData: any = await this.knex<Item>('item')
+        .select(this.knex.raw('COUNT(DISTINCT item.id) as total_count'))
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .where(function () {
+          if (search && search !== '') {
+            this.where('createdUser.username', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
+          }
+        })
+        .andWhere('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
+        .andWhere(function () {
+          this.andWhereRaw(
+            `item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= ${config.item_less_from}`,
+          ).orWhereRaw(
+            `item.quantity - (SELECT COALESCE(SUM(quantity), 0) FROM sell_item WHERE sell_item.item_id = item.id) <= item.item_less_from`,
+          );
+        });
+      return itemData[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async kogaLessPrintData(
+    search: Search,
+    filter: Filter,
+  ): Promise<{
+    item: Item[];
+    info: KogaLessReportInfo;
+  }> {
+    try {
+      let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
+        'config',
+      )
+        .select('item_less_from')
+        .first();
+      const item: Item[] = await this.knex<Item>('item')
+        .select(
+          'item.*',
+          'item_type.id as type_id',
+          'item_type.name as type_name',
+          'createdUser.username as created_by',
+          'updatedUser.username as updated_by',
+          this.knex.raw('SUM(sell_item.quantity) as sell_quantity'),
+        )
+        .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+        .where('item.deleted', false)
+        .andWhere(function () {
+          this.where('sell_item.deleted', false).orWhereNull(
+            'sell_item.deleted',
+          );
+        })
+        .andWhere(function () {
+          if (filter && filter != '') {
+            this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
+              `%${filter}%`,
+            ]);
+          }
+
+          if (search && search !== '') {
+            this.where('createdUser.username', 'ilike', `%${search}%`)
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhere('item.barcode', 'ilike', `%${search}%`)
+              .orWhere('item.name', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
+          }
+        })
+        .groupBy(
+          'item.id',
+          'item_type.id',
+          'createdUser.username',
+          'updatedUser.username',
+        )
+        .havingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+        ${config.item_less_from}`,
+        )
+        .orHavingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+          item.item_less_from`,
+        )
+        .orderBy('item.id', 'desc');
+
+      let info = !search
+        ? await this.getKogaLessInformation(filter)
+        : await this.getKogaLessInformationSearch(search);
+
+      return { item, info };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async kogaLessPrint(
+    search: Search,
+    filter: Filter,
+    user_id: number,
+  ): Promise<Uint8Array> {
+    try {
+      let user: Pick<User, 'username'> = await this.knex<User>('user')
+        .where('deleted', false)
+        .andWhere('id', user_id)
+        .select('username')
+        .first();
+
+      let data = await this.kogaLessPrintData(search, filter);
+
+      let { browser, page } = await generatePuppeteer({});
+      const htmlContent = `
+        <!DOCTYPE html>
+  <html lang="en">
+    <head>
+   ${pdfStyle}
+    </head>
+  
+    <body>
+      <p class="username">ڕاپۆرتی  جەردی کاڵا - کەمبوو</p>
+  
+        <div class="info_black">
+           <div class="infoRight">
+    
+  
+        </div>
+       <div class="infoLeft">
+        <p>کۆی ژمارەی کاڵا ${formatMoney(data.info.total_count)}</p>
+      
+          
+        </div>
+        
+      </div>
+      <table>
+        <thead>
+          <tr>
+           
+            <th>کەمترین عددی مەواد</th>
+  
+            <th>دانەی ماوە</th>
+            <th>دانەی فرۆشراو</th>
+            <th>دانەی کڕاو</th>
+            <th>جۆر</th>
+            <th>بارکۆد</th>
+            <th>ناو</th>
+         
+          </tr>
+        </thead>
+        <tbody id="table-body">
+    ${data.item
+      .map(
+        (val: KogaLessReportData) => `
+    <tr>
+      <td>${formatMoney(val.item_less_from)}</td>
+      <td>${formatMoney(val.quantity - val.sell_quantity)}</td>
+      <td>${formatMoney(val.sell_quantity)}</td>
+      <td>${formatMoney(val.quantity)}</td>
+      <td>${val.type_name}</td>
+      <td>${val.barcode}</td>
+      <td>${val.name}</td>
+    </tr>
+  `,
+      )
+      .join('')}
+  
+        </tbody>
+      </table>
+    <div class="info_black">
+        <div class="infoLeft">
+          <p>بەرواری چاپ ${timestampToDateString(Date.now())}</p>
+        </div>
+        <div class="infoRight">
+          <p>${user.username} چاپکراوە لەلایەن</p>
+        </div>
+      </div>
+    </body>
+  </html>
+  
+        `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
@@ -3167,6 +3553,11 @@ ${data.item
     limit: Limit,
     from: From,
     to: To,
+    colorFilter: Filter,
+    carModelFilter: Filter,
+    carTypeFilter: Filter,
+    serviceFilter: Filter,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Reservation[]>> {
     try {
       const sell: Reservation[] = await this.knex<Reservation>('reservation')
@@ -3204,6 +3595,26 @@ ${data.item
             this.whereBetween('reservation.date_time', [fromDate, toDate]);
           }
         })
+        .andWhere(function () {
+          if (colorFilter != '' && colorFilter) {
+            this.where('color.id', colorFilter);
+          }
+          if (carModelFilter != '' && carModelFilter) {
+            this.where('car_model.id', carModelFilter);
+          }
+          if (carTypeFilter != '' && carTypeFilter) {
+            this.where('car_type.id', carTypeFilter);
+          }
+          if (serviceFilter != '' && serviceFilter) {
+            this.where('service.id', serviceFilter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
         .orderBy('id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -3231,6 +3642,11 @@ ${data.item
   async getReservationInformation(
     from: From,
     to: To,
+    colorFilter: Filter,
+    carModelFilter: Filter,
+    carTypeFilter: Filter,
+    serviceFilter: Filter,
+    userFilter: Filter,
   ): Promise<ReservationReportInfo> {
     try {
       let reservation: any = await this.knex<Reservation>('reservation')
@@ -3238,14 +3654,48 @@ ${data.item
           this.knex.raw('COUNT(DISTINCT reservation.id) as reservation_count'),
           this.knex.raw('COALESCE(SUM(reservation.price), 0) as total_price'),
         )
+        .leftJoin(
+          'user as createdUser',
+          'reservation.created_by',
+          'createdUser.id',
+        ) // Join for created_by
+        .leftJoin(
+          'user as updatedUser',
+          'reservation.updated_by',
+          'updatedUser.id',
+        ) // Join for updated_by
+        .leftJoin('car_model', 'reservation.car_model_id', 'car_model.id')
+        .leftJoin('car_type', 'reservation.car_type_id', 'car_type.id')
+        .leftJoin('color', 'reservation.color_id', 'color.id')
+        .leftJoin('service', 'reservation.service_id', 'service.id')
         .where(function () {
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('created_at', [fromDate, toDate]);
+            this.whereBetween('reservation.created_at', [fromDate, toDate]);
           }
         })
-        .andWhere('deleted', false);
+        .andWhere(function () {
+          if (colorFilter != '' && colorFilter) {
+            this.where('color.id', colorFilter);
+          }
+          if (carModelFilter != '' && carModelFilter) {
+            this.where('car_model.id', carModelFilter);
+          }
+          if (carTypeFilter != '' && carTypeFilter) {
+            this.where('car_type.id', carTypeFilter);
+          }
+          if (serviceFilter != '' && serviceFilter) {
+            this.where('service.id', serviceFilter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
+        .andWhere('reservation.deleted', false);
 
       return reservation[0];
     } catch (error) {
@@ -3339,6 +3789,11 @@ ${data.item
     search: Search,
     from: From,
     to: To,
+    colorFilter: Filter,
+    carModelFilter: Filter,
+    carTypeFilter: Filter,
+    serviceFilter: Filter,
+    userFilter: Filter,
   ): Promise<{
     sell: Reservation[];
     info: ReservationReportInfo;
@@ -3390,10 +3845,38 @@ ${data.item
               .orWhere('car_type.name', 'ilike', `%${search}%`);
           }
         })
+        .andWhere(function () {
+          if (colorFilter != '' && colorFilter) {
+            this.where('color.id', colorFilter);
+          }
+          if (carModelFilter != '' && carModelFilter) {
+            this.where('car_model.id', carModelFilter);
+          }
+          if (carTypeFilter != '' && carTypeFilter) {
+            this.where('car_type.id', carTypeFilter);
+          }
+          if (serviceFilter != '' && serviceFilter) {
+            this.where('service.id', serviceFilter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
         .orderBy('id', 'desc');
 
       let info = !search
-        ? await this.getReservationInformation(from, to)
+        ? await this.getReservationInformation(
+            from,
+            to,
+            colorFilter,
+            carModelFilter,
+            carTypeFilter,
+            serviceFilter,
+            userFilter,
+          )
         : await this.getReservationInformationSearch(search);
 
       return { sell, info };
@@ -3407,6 +3890,11 @@ ${data.item
     from: From,
     to: To,
     user_id: number,
+    colorFilter: Filter,
+    carModelFilter: Filter,
+    carTypeFilter: Filter,
+    serviceFilter: Filter,
+    userFilter: Filter,
   ): Promise<Uint8Array> {
     try {
       let user: Pick<User, 'username'> = await this.knex<User>('user')
@@ -3415,7 +3903,16 @@ ${data.item
         .select('username')
         .first();
 
-      let data = await this.reservationPrintData(search, from, to);
+      let data = await this.reservationPrintData(
+        search,
+        from,
+        to,
+        colorFilter,
+        carModelFilter,
+        carTypeFilter,
+        serviceFilter,
+        userFilter,
+      );
 
       let { browser, page } = await generatePuppeteer({});
 

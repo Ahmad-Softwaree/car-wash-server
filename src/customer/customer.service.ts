@@ -85,7 +85,7 @@ export class CustomerService {
       const customers: Customer[] = await this.knex
         .table<Customer>('customer')
         .where('deleted', false)
-        .select('*');
+        .select('id', 'first_name', 'last_name');
 
       return customers;
     } catch (error) {

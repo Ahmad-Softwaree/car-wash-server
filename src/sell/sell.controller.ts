@@ -23,6 +23,7 @@ import { ENUMs } from 'lib/enum';
 import { Request, Response } from 'express';
 import { Sell, SellItem } from 'database/types';
 import {
+  Filter,
   From,
   Id,
   Limit,
@@ -52,6 +53,8 @@ export class SellController {
     @Res() res: Response,
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
+    @Query('userFilter') userFilter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<Sell[]>>> {
@@ -59,6 +62,7 @@ export class SellController {
       let users: PaginationReturnType<Sell[]> = await this.sellService.getAll(
         page,
         limit,
+        userFilter,
         from,
         to,
       );
@@ -83,12 +87,14 @@ export class SellController {
     @Res() res: Response,
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
+    @Query('userFilter') userFilter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<Sell[]>>> {
     try {
       let users: PaginationReturnType<Sell[]> =
-        await this.sellService.getAllDeleted(page, limit, from, to);
+        await this.sellService.getAllDeleted(page, limit, userFilter, from, to);
       return res.status(HttpStatus.OK).json(users);
     } catch (error) {
       return res
@@ -194,12 +200,14 @@ export class SellController {
   async getSelfDeletedSellItems(
     @Req() req: Request,
     @Res() res: Response,
+    @Query('userFilter') userFilter: Filter,
+
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
   ): Promise<Response<PaginationReturnType<SellItem[]>>> {
     try {
       let sellItems: PaginationReturnType<SellItem[]> =
-        await this.sellService.getSelfDeletedSellItems(page, limit);
+        await this.sellService.getSelfDeletedSellItems(page, limit, userFilter);
       return res.status(HttpStatus.OK).json(sellItems);
     } catch (error) {
       return res
@@ -219,6 +227,7 @@ export class SellController {
   async searchSelfDeletedSellItems(
     @Req() req: Request,
     @Res() res: Response,
+
     @Query('search') search: Search,
   ): Promise<Response<SellItem[]>> {
     try {
@@ -244,11 +253,15 @@ export class SellController {
   async getDeletedSellItems(
     @Req() req: Request,
     @Res() res: Response,
+    @Query('userFilter') userFilter: Filter,
+
     @Param('sell_id', ParseIntPipe) sell_id: Id,
   ): Promise<Response<SellItem[]>> {
     try {
-      let sellItems: SellItem[] =
-        await this.sellService.getDeletedSellItems(sell_id);
+      let sellItems: SellItem[] = await this.sellService.getDeletedSellItems(
+        sell_id,
+        userFilter,
+      );
       return res.status(HttpStatus.OK).json(sellItems);
     } catch (error) {
       return res

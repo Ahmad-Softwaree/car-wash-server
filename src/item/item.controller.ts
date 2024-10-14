@@ -58,6 +58,8 @@ export class ItemController {
     @Res() res: Response,
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
+    @Query('filter') filter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<Item[]>>> {
@@ -66,6 +68,7 @@ export class ItemController {
         page,
         limit,
         from,
+        filter,
         to,
       );
       return res.status(HttpStatus.OK).json(items);
@@ -109,12 +112,21 @@ export class ItemController {
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<ItemWithType[]>>> {
     try {
       let items: PaginationReturnType<ItemWithType[]> =
-        await this.itemService.getAll(page, limit, filter, from, to);
+        await this.itemService.getAll(
+          page,
+          limit,
+          filter,
+          userFilter,
+          from,
+          to,
+        );
       return res.status(HttpStatus.OK).json(items);
     } catch (error) {
       return res
@@ -134,12 +146,21 @@ export class ItemController {
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<ItemWithType[]>>> {
     try {
       let items: PaginationReturnType<ItemWithType[]> =
-        await this.itemService.getAllDeleted(page, limit, filter, from, to);
+        await this.itemService.getAllDeleted(
+          page,
+          limit,
+          filter,
+          userFilter,
+          from,
+          to,
+        );
       return res.status(HttpStatus.OK).json(items);
     } catch (error) {
       return res

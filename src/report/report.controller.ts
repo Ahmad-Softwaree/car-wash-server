@@ -41,6 +41,7 @@ import {
   ItemProfitReportInfo,
   ItemReportInfo,
   KogaAllReportInfo,
+  KogaLessReportInfo,
   KogaMovementReportInfo,
   KogaNullReportInfo,
   ReservationReportInfo,
@@ -548,6 +549,129 @@ export class ReportController {
   ): Promise<Response<Uint8Array>> {
     try {
       let pdf = await this.reportService.kogaNullPrint(
+        search,
+        filter,
+        req['user'].id,
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+        'Content-Length': pdf.length,
+      });
+
+      res.end(pdf);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  //KOGA LESS REPORT
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get ess Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_less')
+  async getKogaLess(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('page') page: Page,
+    @Query('filter') filter: Filter,
+    @Query('limit') limit: Limit,
+  ): Promise<Response<PaginationReturnType<Item[]>>> {
+    try {
+      let data: PaginationReturnType<Item[]> =
+        await this.reportService.getKogaLess(page, limit, filter);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Less Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_less/information')
+  async getKogaLessInformation(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+  ): Promise<Response<KogaLessReportInfo>> {
+    try {
+      let data: KogaLessReportInfo =
+        await this.reportService.getKogaLessInformation(filter);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+  //test
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Less Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_less_search')
+  async getKogaLessSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<Item[]>> {
+    try {
+      let data: Item[] = await this.reportService.getKogaLessSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Less Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_less_search/information')
+  async getKogaLessInformationSearch(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+  ): Promise<Response<KogaLessReportInfo>> {
+    try {
+      let data: KogaLessReportInfo =
+        await this.reportService.getKogaLessInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @ApiOperation({ summary: 'Get Less Item' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Item not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('koga_less/print')
+  async kogaLessPrint(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+    @Query('search') search: Search,
+  ): Promise<Response<Uint8Array>> {
+    try {
+      let pdf = await this.reportService.kogaLessPrint(
         search,
         filter,
         req['user'].id,
@@ -1295,10 +1419,25 @@ export class ReportController {
     @Query('limit') limit: Limit,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('colorFilter') colorFilter: Filter,
+    @Query('carModelFilter') carModelFilter: Filter,
+    @Query('carTypeFilter') carTypeFilter: Filter,
+    @Query('serviceFilter') serviceFilter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Reservation[]>>> {
     try {
       let data: PaginationReturnType<Reservation[]> =
-        await this.reportService.getReservation(page, limit, from, to);
+        await this.reportService.getReservation(
+          page,
+          limit,
+          from,
+          to,
+          colorFilter,
+          carModelFilter,
+          carTypeFilter,
+          serviceFilter,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1321,10 +1460,23 @@ export class ReportController {
     @Res() res: Response,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('colorFilter') colorFilter: Filter,
+    @Query('carModelFilter') carModelFilter: Filter,
+    @Query('carTypeFilter') carTypeFilter: Filter,
+    @Query('serviceFilter') serviceFilter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<ReservationReportInfo>> {
     try {
       let data: ReservationReportInfo =
-        await this.reportService.getReservationInformation(from, to);
+        await this.reportService.getReservationInformation(
+          from,
+          to,
+          colorFilter,
+          carModelFilter,
+          carTypeFilter,
+          serviceFilter,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1398,6 +1550,11 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('colorFilter') colorFilter: Filter,
+    @Query('carModelFilter') carModelFilter: Filter,
+    @Query('carTypeFilter') carTypeFilter: Filter,
+    @Query('serviceFilter') serviceFilter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<Uint8Array>> {
     try {
       let pdf = await this.reportService.reservationPrint(
@@ -1405,6 +1562,11 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        colorFilter,
+        carModelFilter,
+        carTypeFilter,
+        serviceFilter,
+        userFilter,
       );
       res.set({
         'Content-Type': 'application/pdf',

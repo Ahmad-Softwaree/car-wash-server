@@ -90,6 +90,19 @@ export class UserService {
       throw new Error(error.message);
     }
   }
+
+  async getSelect(): Promise<User[]> {
+    try {
+      const customers: User[] = await this.knex
+        .table<User>('user')
+        .where('deleted', false)
+        .select('id', 'username', 'name');
+
+      return customers;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
   async getAllDeleted(
     page: Page,
     limit: Limit,

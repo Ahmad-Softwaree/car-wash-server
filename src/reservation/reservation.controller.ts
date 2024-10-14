@@ -84,10 +84,25 @@ export class ReservationController {
     @Query('limit') limit: Limit,
     @Query('date') date: Date,
     @Query('filter') filter: Filter,
+    @Query('colorFilter') colorFilter: Filter,
+    @Query('carModelFilter') carModelFilter: Filter,
+    @Query('carTypeFilter') carTypeFilter: Filter,
+    @Query('serviceFilter') serviceFilter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Reservation[]>>> {
     try {
       let reservations: PaginationReturnType<Reservation[]> =
-        await this.reservationService.getAll(page, limit, date, filter);
+        await this.reservationService.getAll(
+          page,
+          limit,
+          date,
+          filter,
+          colorFilter,
+          carModelFilter,
+          carTypeFilter,
+          serviceFilter,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(reservations);
     } catch (error) {
       return res
@@ -111,10 +126,27 @@ export class ReservationController {
     @Query('limit') limit: Limit,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('filter') filter: Filter,
+    @Query('colorFilter') colorFilter: Filter,
+    @Query('carModelFilter') carModelFilter: Filter,
+    @Query('carTypeFilter') carTypeFilter: Filter,
+    @Query('serviceFilter') serviceFilter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Reservation[]>>> {
     try {
       let reservations: PaginationReturnType<Reservation[]> =
-        await this.reservationService.getAllDeleted(page, limit, from, to);
+        await this.reservationService.getAllDeleted(
+          page,
+          limit,
+          from,
+          to,
+          filter,
+          colorFilter,
+          carModelFilter,
+          carTypeFilter,
+          serviceFilter,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(reservations);
     } catch (error) {
       return res

@@ -26,8 +26,10 @@ export class ExpenseService {
     page: Page,
     limit: Limit,
     filter: Filter,
+
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<ExpenseWithType[]>> {
     try {
       const expenses: ExpenseWithType[] = await this.knex<Expense>('expense')
@@ -47,7 +49,12 @@ export class ExpenseService {
           if (filter !== '' && filter) {
             this.where('expense.type_id', filter);
           }
-
+          if (userFilter !== '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
@@ -82,6 +89,7 @@ export class ExpenseService {
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<ExpenseWithType[]>> {
     try {
       const expenses: ExpenseWithType[] = await this.knex<Expense>('expense')
@@ -101,7 +109,12 @@ export class ExpenseService {
           if (filter !== '' && filter) {
             this.where('expense.type_id', filter);
           }
-
+          if (userFilter !== '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));

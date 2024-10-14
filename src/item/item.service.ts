@@ -61,6 +61,8 @@ export class ItemService {
     page: Page,
     limit: Limit,
     from: From,
+    filter: Filter,
+
     to: To,
   ): Promise<PaginationReturnType<Item[]>> {
     try {
@@ -69,11 +71,11 @@ export class ItemService {
       )
         .select('item_less_from')
         .first();
-      console.log(config);
       const items: Item[] = await this.knex<Item>('item')
         .select(
           'item.*',
-
+          'item_type.id as type_id',
+          'item_type.name as type_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
           this.knex.raw(
@@ -82,6 +84,8 @@ export class ItemService {
         )
         .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+
         .leftJoin('sell_item', (join) => {
           join
             .on('item.id', 'sell_item.item_id')
@@ -89,23 +93,28 @@ export class ItemService {
         })
 
         .where('item.deleted', false)
-        .havingRaw(
-          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
-        ${config.item_less_from}`,
-        ) // Use "havingRaw" because of the aggregate function
         .andWhere(function () {
+          if (filter != '' && filter) {
+            this.where('item_type.id', filter);
+          }
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('item.created_at', [fromDate, toDate]);
           }
         })
+        .havingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+        ${config.item_less_from}`,
+        )
+        .orHavingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+          item.item_less_from`,
+        )
+
         .groupBy(
-          'item.id', // Include primary key
-          'item.name', // Select specific columns from item
-          'item.created_at',
-          'item.deleted',
-          'item.quantity',
+          'item.id',
+          'item_type.id',
           'createdUser.username',
           'updatedUser.username',
         )
@@ -146,10 +155,14 @@ export class ItemService {
           'item.*',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
+          'item_type.id as type_id',
+          'item_type.name as type_name',
           this.knex.raw(
             'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) as actual_quantity', // Cast to INT
           ),
         )
+        .leftJoin('item_type', 'item.type_id', 'item_type.id')
+
         .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id') // Join for created_by
         .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id') // Join for updated_by
         .leftJoin('sell_item', (join) => {
@@ -161,7 +174,11 @@ export class ItemService {
         .havingRaw(
           'CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) < ?',
           [config.item_less_from],
-        ) // Use "havingRaw" because of the aggregate function
+        )
+        .orHavingRaw(
+          `CAST(COALESCE(item.quantity, 0) - COALESCE(SUM(sell_item.quantity), 0) AS INT) <
+          item.item_less_from`,
+        )
         .andWhere(function () {
           this.where('item.name', 'ilike', `%${search}%`).orWhere(
             'item.barcode',
@@ -170,12 +187,8 @@ export class ItemService {
           );
         })
         .groupBy(
-          'item.id', // Include primary key
-          'item.name', // Select specific columns from item
-          'item.created_at',
-          'item.deleted',
-          'item.quantity',
-
+          'item.id',
+          'item_type.id',
           'createdUser.username',
           'updatedUser.username',
         )
@@ -191,6 +204,8 @@ export class ItemService {
     page: Page,
     limit: Limit,
     filter: Filter,
+    userFilter: Filter,
+
     from: From,
     to: To,
   ): Promise<PaginationReturnType<ItemWithType[]>> {
@@ -218,6 +233,12 @@ export class ItemService {
         .andWhere(function () {
           if (filter != '' && filter) {
             this.where('item_type.id', filter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
@@ -255,6 +276,7 @@ export class ItemService {
     page: Page,
     limit: Limit,
     filter: Filter,
+    userFilter: Filter,
     from: From,
     to: To,
   ): Promise<PaginationReturnType<ItemWithType[]>> {
@@ -282,6 +304,12 @@ export class ItemService {
         .andWhere(function () {
           if (filter != '' && filter) {
             this.where('item_type.id', filter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));

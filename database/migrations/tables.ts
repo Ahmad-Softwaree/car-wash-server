@@ -162,6 +162,7 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
         .onDelete('RESTRICT');
       table.integer('quantity').notNullable().defaultTo(0);
       table.integer('item_purchase_price').notNullable().defaultTo(0);
+      table.integer('item_less_from').notNullable().defaultTo(0);
       table.integer('item_sell_price').notNullable().defaultTo(0);
       table.string('note').notNullable();
       table.boolean('deleted').defaultTo(false);

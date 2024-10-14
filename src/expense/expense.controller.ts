@@ -55,12 +55,21 @@ export class ExpenseController {
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<ExpenseWithType[]>>> {
     try {
       let expenses: PaginationReturnType<ExpenseWithType[]> =
-        await this.expenseService.getAll(page, limit, filter, from, to);
+        await this.expenseService.getAll(
+          page,
+          limit,
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(expenses);
     } catch (error) {
       return res
@@ -83,12 +92,21 @@ export class ExpenseController {
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
+
     @Query('from') from: From,
     @Query('to') to: To,
   ): Promise<Response<PaginationReturnType<ExpenseWithType[]>>> {
     try {
       let expenses: PaginationReturnType<ExpenseWithType[]> =
-        await this.expenseService.getAllDeleted(page, limit, filter, from, to);
+        await this.expenseService.getAllDeleted(
+          page,
+          limit,
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(expenses);
     } catch (error) {
       return res

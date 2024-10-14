@@ -9,11 +9,12 @@ import { Knex } from 'knex';
 const items = Array.from({ length: 10 }, () => ({
   name: faker.commerce.productName(),
   barcode: faker.string.alphanumeric(12),
-  type_id: null,
+  type_id: 1,
   quantity: faker.number.int({ min: 0, max: 1000 }),
   item_purchase_price: faker.number.int({ min: 0, max: 1000 }),
   item_sell_price: faker.number.int({ min: 0, max: 1000 }),
   created_by: 1,
+  item_less_from: 10,
   note: faker.lorem.sentence(),
   deleted: false,
   created_at: new Date(),
