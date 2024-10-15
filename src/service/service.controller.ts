@@ -71,7 +71,7 @@ export class ServiceController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.RESERVATION_PART as string])
+  @PartName(['all'])
   @ApiOperation({ summary: 'Get Select Services' })
   @ApiResponse({
     status: 200,

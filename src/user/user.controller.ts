@@ -45,7 +45,7 @@ import { ENUMs } from 'lib/enum';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @PartName([ENUMs.RESERVATION_PART as string])
+  @PartName(['all'])
   @ApiOperation({ summary: 'Get Select Users' })
   @ApiResponse({
     status: 200,

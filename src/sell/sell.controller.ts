@@ -42,7 +42,7 @@ import { RestoreSellDto } from './dto/restore-sell.dto';
 @Controller('sell')
 export class SellController {
   constructor(private readonly sellService: SellService) {}
-  @PartName([ENUMs.KOGA_PART as string])
+  @PartName([ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Get All Sells' })
   @ApiResponse({ status: 200, description: 'Sells retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Sells not found.' })
@@ -73,7 +73,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.KOGA_PART as string])
+  @PartName([ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Get All Deleted Sells' })
   @ApiResponse({
     status: 200,
@@ -102,7 +102,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.KOGA_PART as string])
+  @PartName([ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Search Sells' })
   @ApiResponse({ status: 200, description: 'Sells retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Sells not found.' })
@@ -122,7 +122,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.KOGA_PART as string])
+  @PartName([ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Search Sells' })
   @ApiResponse({ status: 200, description: 'Sells retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Sells not found.' })
@@ -142,7 +142,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.CREATE_PSULA_PART as string])
+  @PartName([ENUMs.CREATE_PSULA_PART as string, ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Get Sell By Id' })
   @ApiParam({ name: 'id', description: 'Sell ID', example: 1 })
   @ApiResponse({ status: 200, description: 'Sell retrieved successfully.' })
@@ -163,7 +163,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.CREATE_PSULA_PART as string])
+  @PartName([ENUMs.CREATE_PSULA_PART as string, ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Get Sell Items By Id' })
   @ApiParam({ name: 'sell_id', description: 'Sell Id', example: 1 })
   @ApiResponse({
@@ -188,7 +188,7 @@ export class SellController {
     }
   }
 
-  @PartName([ENUMs.CREATE_PSULA_PART as string])
+  @PartName([ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Get Deleted Sell Items By Id' })
   @ApiResponse({
     status: 200,
@@ -215,7 +215,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.CREATE_PSULA_PART as string])
+  @PartName([ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Get Deleted Sell Items By Id' })
   @ApiResponse({
     status: 200,
@@ -240,7 +240,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.CREATE_PSULA_PART as string])
+  @PartName([ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Get Sell Items By Id' })
   @ApiParam({ name: 'sell_id', description: 'Sell Id', example: 1 })
   @ApiResponse({
@@ -287,7 +287,7 @@ export class SellController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.CREATE_PSULA_PART as string])
+  @PartName([ENUMs.CREATE_PSULA_PART as string, ENUMs.SELL_PART as string])
   @ApiOperation({ summary: 'Print Sell' })
   @ApiParam({ name: 'sell_id', description: 'Sell ID', example: 1 })
   @ApiResponse({ status: 200, description: 'Sell created successfully.' })
@@ -298,12 +298,7 @@ export class SellController {
     @Res() res: Response,
     @Param('sell_id', ParseIntPipe) sell_id: Id,
     @Param('where') where: 'pos' | 'items',
-  ): Promise<
-    Response<{
-      data: string | Uint8Array;
-      items_print_modal: boolean;
-    }>
-  > {
+  ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.sellService.print(sell_id, req['user'].id, where);
       if (data.items_print_modal) {

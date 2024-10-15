@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
   Config,
   Expense,
@@ -10,7 +10,8 @@ import {
   User,
 } from 'database/types';
 import { Knex } from 'knex';
-
+import { randomUUID } from 'node:crypto';
+import { join } from 'path';
 import {
   formatDateToDDMMYY,
   formateDateToYMDHM,
@@ -29,8 +30,8 @@ import {
   To,
   Filter,
 } from 'src/types/global';
-import puppeteer from 'puppeteer';
-import { Response } from 'express';
+import * as printer from 'pdf-to-printer';
+
 import { pdfBufferObject, pdfStyle } from 'lib/static/pdf';
 import {
   BillProfitReportData,
@@ -58,6 +59,8 @@ import {
   SellReportData,
   SellReportInfo,
 } from 'src/types/report';
+import { Printer } from 'pdf-to-printer';
+import { unlinkSync } from 'node:fs';
 @Injectable()
 export class ReportService {
   constructor(@Inject('KnexConnection') private readonly knex: Knex) {}
@@ -264,8 +267,24 @@ export class ReportService {
     from: From,
     to: To,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -275,6 +294,8 @@ export class ReportService {
       let data = await this.sellPrintData(search, from, to);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
+
       const htmlContent = `
       <!DOCTYPE html>
 <html lang="en">
@@ -339,9 +360,30 @@ export class ReportService {
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -616,8 +658,24 @@ export class ReportService {
     from: From,
     to: To,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -698,12 +756,34 @@ ${data.item
 
       `;
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -969,8 +1049,24 @@ ${data.item
     search: Search,
     filter: Filter,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -980,6 +1076,8 @@ ${data.item
       let data = await this.kogaAllPrintData(search, filter);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
+
       const htmlContent = `
       <!DOCTYPE html>
 <html lang="en">
@@ -1065,9 +1163,30 @@ ${data.item
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -1350,8 +1469,24 @@ ${data.item
     search: Search,
     filter: Filter,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -1361,6 +1496,8 @@ ${data.item
       let data = await this.kogaNullPrintData(search, filter);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
+
       const htmlContent = `
       <!DOCTYPE html>
 <html lang="en">
@@ -1445,10 +1582,30 @@ ${data.item
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
       await browser.close();
-
-      return pdfBuffer;
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -1747,8 +1904,24 @@ ${data.item
     search: Search,
     filter: Filter,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -1758,6 +1931,8 @@ ${data.item
       let data = await this.kogaLessPrintData(search, filter);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
+
       const htmlContent = `
         <!DOCTYPE html>
   <html lang="en">
@@ -1830,9 +2005,30 @@ ${data.item
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -2110,8 +2306,24 @@ ${data.item
     from: From,
     to: To,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -2121,6 +2333,8 @@ ${data.item
       let data = await this.kogaMovementPrintData(filter, search, from, to);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
+
       const htmlContent = `
     <!DOCTYPE html>
 <html lang="en">
@@ -2194,9 +2408,30 @@ ${pdfStyle}
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -2428,8 +2663,24 @@ ${pdfStyle}
     from: From,
     to: To,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -2439,6 +2690,8 @@ ${pdfStyle}
       let data = await this.billProfitPrintData(search, from, to);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
+
       const htmlContent = `
     <!DOCTYPE html>
 <html lang="en">
@@ -2510,9 +2763,30 @@ ${data.sell
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -2824,8 +3098,24 @@ ${data.sell
     from: From,
     to: To,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -2835,6 +3125,7 @@ ${data.sell
       let data = await this.itemProfitPrintData(filter, search, from, to);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
 
       const htmlContent = `
       <!DOCTYPE html>
@@ -2918,9 +3209,30 @@ ${data.item
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -3132,8 +3444,24 @@ ${data.item
     from: From,
     to: To,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -3143,6 +3471,8 @@ ${data.item
       let data = await this.expensePrintData(filter, search, from, to);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
+
       const htmlContent = `
       <!DOCTYPE html>
 <html lang="en">
@@ -3202,10 +3532,30 @@ ${data.item
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
       await browser.close();
-
-      return pdfBuffer;
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -3413,8 +3763,24 @@ ${data.item
     from: From,
     to: To,
     user_id: number,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -3424,6 +3790,7 @@ ${data.item
       let data = await this.casePrintData(search, from, to);
 
       let { browser, page } = await generatePuppeteer({});
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
 
       const htmlContent = `
       <!DOCTYPE html>
@@ -3488,9 +3855,30 @@ ${data.item
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
 
-      await browser.close();
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
-      return pdfBuffer;
+      await browser.close();
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -3895,8 +4283,24 @@ ${data.item
     carTypeFilter: Filter,
     serviceFilter: Filter,
     userFilter: Filter,
-  ): Promise<Uint8Array> {
+  ): Promise<{
+    data: string | Uint8Array;
+    report_print_modal: boolean;
+  }> {
     try {
+      let config: Pick<Config, 'report_print_modal'> = await this.knex<Config>(
+        'config',
+      )
+        .select('report_print_modal')
+        .first();
+
+      let activePrinter = await this.knex<Printer>('printer')
+        .where('active', true)
+        .first();
+
+      if (!activePrinter) {
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
+      }
       let user: Pick<User, 'username'> = await this.knex<User>('user')
         .where('deleted', false)
         .andWhere('id', user_id)
@@ -3915,6 +4319,8 @@ ${data.item
       );
 
       let { browser, page } = await generatePuppeteer({});
+
+      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
 
       const htmlContent = `
         <!DOCTYPE html>
@@ -3987,10 +4393,30 @@ ${data.item
       await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
       const pdfBuffer = await page.pdf(pdfBufferObject);
+      if (!config.report_print_modal) {
+        let jobId = await printer.print(pdfPath, {
+          printer: activePrinter.name,
+        });
+        if (jobId == undefined || jobId == null) {
+          await browser.close();
+          return {
+            data: pdfBuffer,
+            report_print_modal: true,
+          };
+        }
+      }
 
       await browser.close();
-
-      return pdfBuffer;
+      if (config.report_print_modal) {
+        return {
+          data: pdfBuffer,
+          report_print_modal: config.report_print_modal,
+        };
+      }
+      return {
+        data: 'success',
+        report_print_modal: config.report_print_modal,
+      };
     } catch (error) {
       throw new Error(error.message);
     }

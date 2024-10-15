@@ -136,8 +136,8 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
     })
     .createTable('item', function (table) {
       table.increments('id').primary();
-      table.string('name').notNullable();
-      table.string('barcode').notNullable();
+      table.string('name').notNullable().unique();
+      table.string('barcode').notNullable().unique();
       table.string('image_name').defaultTo('');
       table.string('image_url').defaultTo('');
       table.integer('type_id').unsigned().notNullable();

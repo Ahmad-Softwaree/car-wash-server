@@ -163,21 +163,24 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.sellPrint(
+      let data = await this.reportService.sellPrint(
         search,
         from,
         to,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -297,22 +300,25 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.itemPrint(
+      let data = await this.reportService.itemPrint(
         filter,
         search,
         from,
         to,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -423,20 +429,23 @@ export class ReportController {
     @Query('filter') filter: Filter,
 
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.kogaAllPrint(
+      let data = await this.reportService.kogaAllPrint(
         search,
         filter,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -546,20 +555,23 @@ export class ReportController {
     @Res() res: Response,
     @Query('filter') filter: Filter,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.kogaNullPrint(
+      let data = await this.reportService.kogaNullPrint(
         search,
         filter,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -669,20 +681,23 @@ export class ReportController {
     @Res() res: Response,
     @Query('filter') filter: Filter,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.kogaLessPrint(
+      let data = await this.reportService.kogaLessPrint(
         search,
         filter,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -802,22 +817,25 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.kogaMovementPrint(
+      let data = await this.reportService.kogaMovementPrint(
         search,
         filter,
         from,
         to,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -944,21 +962,24 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.billProfitPrint(
+      let data = await this.reportService.billProfitPrint(
         search,
         from,
         to,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1091,22 +1112,25 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.itemProfitPrint(
+      let data = await this.reportService.itemProfitPrint(
         filter,
         search,
         from,
         to,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1223,22 +1247,25 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.expensePrint(
+      let data = await this.reportService.expensePrint(
         filter,
         search,
         from,
         to,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1352,21 +1379,24 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.casePrint(
+      let data = await this.reportService.casePrint(
         search,
         from,
         to,
         req['user'].id,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1555,9 +1585,9 @@ export class ReportController {
     @Query('carTypeFilter') carTypeFilter: Filter,
     @Query('serviceFilter') serviceFilter: Filter,
     @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<Uint8Array>> {
+  ): Promise<Response<string | Uint8Array>> {
     try {
-      let pdf = await this.reportService.reservationPrint(
+      let data = await this.reportService.reservationPrint(
         search,
         from,
         to,
@@ -1568,13 +1598,16 @@ export class ReportController {
         serviceFilter,
         userFilter,
       );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-        'Content-Length': pdf.length,
-      });
-
-      res.end(pdf);
+      if (data.report_print_modal) {
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
+          'Content-Length': data.data.length,
+        });
+        res.end(data.data);
+      } else {
+        res.status(HttpStatus.OK).json({ data: data.data });
+      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -5,10 +5,12 @@ import {
   CarModel,
   CarType,
   Color,
+  Config,
   Customer,
   Expense,
   ExpenseType,
   Item,
+  ItemQuantityHistory,
   ItemType,
   Reservation,
   Role,
@@ -19,6 +21,7 @@ import {
 } from 'database/types';
 import { Knex } from 'knex';
 import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
+import { Printer } from 'pdf-to-printer';
 import {
   Filter,
   From,
@@ -264,6 +267,49 @@ export class BackupService {
       const data: Service[] = await this.knex<Service>('service').select('*');
       await this.knex<Backup>('backup').insert({
         table: 'service',
+        user_id,
+      });
+      return data;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async backupPrinters(user_id: Id): Promise<Printer[]> {
+    try {
+      const data: Printer[] = await this.knex<Printer>('printer').select('*');
+      await this.knex<Backup>('backup').insert({
+        table: 'printer',
+        user_id,
+      });
+      return data;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async backupItemQuantityHistories(
+    user_id: Id,
+  ): Promise<ItemQuantityHistory[]> {
+    try {
+      const data: ItemQuantityHistory[] = await this.knex<ItemQuantityHistory>(
+        'item_quantity_history',
+      ).select('*');
+      await this.knex<Backup>('backup').insert({
+        table: 'item_quantity_history',
+        user_id,
+      });
+      return data;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async backupConfigs(user_id: Id): Promise<Config[]> {
+    try {
+      const data: Config[] = await this.knex<Config>('config').select('*');
+      await this.knex<Backup>('backup').insert({
+        table: 'config',
         user_id,
       });
       return data;

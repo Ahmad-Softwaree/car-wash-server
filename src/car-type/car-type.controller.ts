@@ -71,7 +71,7 @@ export class CarTypeController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.RESERVATION_PART as string])
+  @PartName(['all'])
   @ApiOperation({ summary: 'Get Select CarTypes' })
   @ApiResponse({
     status: 200,

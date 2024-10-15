@@ -70,7 +70,7 @@ export class ColorController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.RESERVATION_PART as string])
+  @PartName(['all'])
   @ApiOperation({ summary: 'Get Select Colors' })
   @ApiResponse({
     status: 200,

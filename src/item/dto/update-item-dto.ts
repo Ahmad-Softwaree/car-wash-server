@@ -19,6 +19,15 @@ export class UpdateItemDto {
   name: string;
 
   @ApiProperty({
+    example: 50,
+    description: 'The purchase price of the item',
+  })
+  @IsNumber({}, { message: 'کەمترین عددی مەواد دەبێت ژمارە بێت' })
+  @IsPositive({ message: 'کەمترین عددی مەواد دەبێت ئەرێنی بێت' })
+  @IsNotEmpty({ message: 'کەمترین عددی مەواد پێویستە' })
+  item_less_from: number;
+
+  @ApiProperty({
     example: '1234567890123',
     description: 'The barcode of the item',
   })

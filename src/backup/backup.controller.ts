@@ -29,10 +29,12 @@ import {
   CarModel,
   CarType,
   Color,
+  Config,
   Customer,
   Expense,
   ExpenseType,
   Item,
+  ItemQuantityHistory,
   ItemType,
   Reservation,
   Role,
@@ -41,6 +43,7 @@ import {
   Service,
   User,
 } from 'database/types';
+import { Printer } from 'pdf-to-printer';
 
 @UseGuards(AuthGuard, PartGuard)
 @ApiTags('backup')
@@ -455,6 +458,89 @@ export class BackupController {
       res.setHeader(
         'Content-Disposition',
         'attachment; filename="services_backup.json"',
+      );
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(HttpStatus.OK).send(JSON.stringify(data, null, 2));
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.NORMAL_BACKUP_PART as string])
+  @ApiOperation({ summary: 'Backup All Printers' })
+  @ApiResponse({ status: 200, description: 'Printers retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Printers not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('/printer')
+  async backupPrinters(
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<Response<Printer[]>> {
+    try {
+      let data: Printer[] = await this.backupService.backupPrinters(
+        req['user'].id,
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename="printers_backup.json"',
+      );
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(HttpStatus.OK).send(JSON.stringify(data, null, 2));
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.NORMAL_BACKUP_PART as string])
+  @ApiOperation({ summary: 'Backup All ItemQuantityHistories' })
+  @ApiResponse({
+    status: 200,
+    description: 'ItemQuantityHistories retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'ItemQuantityHistories not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('/item_quantity_history')
+  async backupItemQuantityHistories(
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<Response<ItemQuantityHistory[]>> {
+    try {
+      let data: ItemQuantityHistory[] =
+        await this.backupService.backupItemQuantityHistories(req['user'].id);
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename="item_quantity_histories_backup.json"',
+      );
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(HttpStatus.OK).send(JSON.stringify(data, null, 2));
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.NORMAL_BACKUP_PART as string])
+  @ApiOperation({ summary: 'Backup All Configs' })
+  @ApiResponse({ status: 200, description: 'Configs retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Configs not found.' })
+  @HttpCode(HttpStatus.OK)
+  @Get('/config')
+  async backupConfigs(
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<Response<Config[]>> {
+    try {
+      let data: Config[] = await this.backupService.backupConfigs(
+        req['user'].id,
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename="configs_backup.json"',
       );
       res.setHeader('Content-Type', 'application/json');
       return res.status(HttpStatus.OK).send(JSON.stringify(data, null, 2));

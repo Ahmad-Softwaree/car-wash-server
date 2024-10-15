@@ -70,7 +70,7 @@ export class CustomerController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.RESERVATION_PART as string])
+  @PartName(['all'])
   @ApiOperation({ summary: 'Get Select Customers' })
   @ApiResponse({
     status: 200,

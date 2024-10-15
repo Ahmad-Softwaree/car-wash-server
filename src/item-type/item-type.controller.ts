@@ -71,7 +71,7 @@ export class ItemTypeController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.ROLES_PART as string, ENUMs.USERS_PART as string])
+  @PartName(['all'])
   @ApiOperation({ summary: 'Get Select Item Type' })
   @ApiResponse({
     status: 200,

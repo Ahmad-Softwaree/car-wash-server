@@ -62,7 +62,7 @@ export class ItemService {
     limit: Limit,
     from: From,
     filter: Filter,
-
+    userFilter: Filter,
     to: To,
   ): Promise<PaginationReturnType<Item[]>> {
     try {
@@ -96,6 +96,12 @@ export class ItemService {
         .andWhere(function () {
           if (filter != '' && filter) {
             this.where('item_type.id', filter);
+          }
+          if (userFilter != '' && userFilter) {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));

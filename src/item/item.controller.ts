@@ -59,6 +59,7 @@ export class ItemController {
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
 
     @Query('from') from: From,
     @Query('to') to: To,
@@ -69,6 +70,7 @@ export class ItemController {
         limit,
         from,
         filter,
+        userFilter,
         to,
       );
       return res.status(HttpStatus.OK).json(items);

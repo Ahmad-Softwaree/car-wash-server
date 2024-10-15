@@ -18,7 +18,6 @@ import { UpdateItemToSellDto } from './dto/update-item-to-sell';
 import { ItemService } from 'src/item/item.service';
 import * as JsBarcode from 'jsbarcode';
 import { Canvas } from 'canvas';
-import { Response } from 'express';
 import {
   formatMoney,
   generatePaginationInfo,
@@ -401,14 +400,14 @@ export class SellService {
       if (where == 'items') {
         flag = config.items_print_modal;
       } else {
-        flag = config.items_print_modal;
+        flag = config.pos_print_modal;
       }
       let activePrinter = await this.knex<Printer>('printer')
         .where('active', true)
         .first();
 
       if (!activePrinter) {
-        throw new BadRequestException('تکایە لە ڕێکخسنت پرینتەرێک چالاک بکە');
+        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
       }
 
       let user: Pick<User, 'username'> = await this.knex<User>('user')
@@ -516,7 +515,6 @@ export class SellService {
             printer: activePrinter.name,
           });
           if (jobId == undefined || jobId == null) {
-            unlinkSync(pdfPath);
             await browser.close();
             return {
               data: pdfBuffer,
@@ -525,7 +523,6 @@ export class SellService {
           }
         }
 
-        unlinkSync(pdfPath);
         await browser.close();
         if (flag) {
           return {
