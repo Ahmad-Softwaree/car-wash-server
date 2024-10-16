@@ -16,7 +16,6 @@ import {
   formatDateToDDMMYY,
   formateDateToYMDHM,
   formatMoney,
-  formatTimestampToDate,
   generatePaginationInfo,
   generatePuppeteer,
   timestampToDateString,
@@ -70,6 +69,7 @@ export class ReportService {
     limit: Limit,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Sell[]>> {
     try {
       const sell: Sell[] = await this.knex<Sell>('sell')
@@ -92,6 +92,12 @@ export class ReportService {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
+          }
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
@@ -119,7 +125,11 @@ export class ReportService {
     }
   }
 
-  async getSellInformation(from: From, to: To): Promise<SellReportInfo> {
+  async getSellInformation(
+    from: From,
+    to: To,
+    userFilter: Filter,
+  ): Promise<SellReportInfo> {
     try {
       const sellData: any = await this.knex<Sell>('sell')
         .select(
@@ -131,6 +141,8 @@ export class ReportService {
             'COALESCE(SUM(sell_item.item_sell_price * sell_item.quantity), 0) as total_sell_price',
           ),
         )
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
 
         .where(function () {
@@ -138,6 +150,12 @@ export class ReportService {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
+          }
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('sell_item.deleted', false)
@@ -217,6 +235,7 @@ export class ReportService {
     search: Search,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<{
     sell: SellReportData[];
     info: SellReportInfo;
@@ -248,12 +267,18 @@ export class ReportService {
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
         })
         .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc');
 
       let info = !search
-        ? await this.getSellInformation(from, to)
+        ? await this.getSellInformation(from, to, userFilter)
         : await this.getSellInformationSearch(search);
 
       return { sell, info };
@@ -267,6 +292,7 @@ export class ReportService {
     from: From,
     to: To,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -291,7 +317,7 @@ export class ReportService {
         .select('username')
         .first();
 
-      let data = await this.sellPrintData(search, from, to);
+      let data = await this.sellPrintData(search, from, to, userFilter);
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -397,6 +423,7 @@ export class ReportService {
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<SellItem[]>> {
     try {
       const sellItem: SellItem[] = await this.knex<SellItem>('sell_item')
@@ -431,10 +458,20 @@ export class ReportService {
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
 
@@ -466,6 +503,7 @@ export class ReportService {
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<ItemReportInfo> {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
@@ -476,6 +514,16 @@ export class ReportService {
           this.knex.raw(
             'SUM(sell_item.item_sell_price * sell_item.quantity) as total_price',
           ),
+        )
+        .leftJoin(
+          'user as createdUser',
+          'sell_item.created_by',
+          'createdUser.id',
+        )
+        .leftJoin(
+          'user as updatedUser',
+          'sell_item.updated_by',
+          'updatedUser.id',
         )
         .leftJoin('item', 'item.id', 'sell_item.item_id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
@@ -489,6 +537,12 @@ export class ReportService {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
+          }
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('sell_item.deleted', false)
@@ -597,6 +651,7 @@ export class ReportService {
     search: Search,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<{
     item: SellItem[];
     info: ItemReportInfo;
@@ -639,11 +694,17 @@ export class ReportService {
                 `%${search}%`,
               ]);
           }
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
         })
         .orderBy('item.id', 'desc');
 
       let info = !search
-        ? await this.getItemInformation(filter, from, to)
+        ? await this.getItemInformation(filter, from, to, userFilter)
         : await this.getItemInformationSearch(search);
 
       return { item, info };
@@ -658,6 +719,7 @@ export class ReportService {
     from: From,
     to: To,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -682,7 +744,7 @@ export class ReportService {
         .select('username')
         .first();
 
-      let data = await this.itemPrintData(filter, search, from, to);
+      let data = await this.itemPrintData(filter, search, from, to, userFilter);
 
       let { browser, page } = await generatePuppeteer({});
 
@@ -3429,8 +3491,8 @@ ${data.item
         .orderBy('expense.id', 'desc');
 
       let info = !search
-        ? await this.getItemInformation(filter, from, to)
-        : await this.getItemInformationSearch(search);
+        ? await this.getExpenseInformation(filter, from, to)
+        : await this.getExpenseInformationSearch(search);
 
       return { expense, info };
     } catch (error) {

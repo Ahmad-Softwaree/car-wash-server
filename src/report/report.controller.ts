@@ -67,6 +67,7 @@ export class ReportController {
     @Query('limit') limit: Limit,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Sell[]>>> {
     try {
       let data: PaginationReturnType<Sell[]> = await this.reportService.getSell(
@@ -74,6 +75,7 @@ export class ReportController {
         limit,
         from,
         to,
+        userFilter,
       );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -94,11 +96,13 @@ export class ReportController {
     @Res() res: Response,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<SellReportInfo>> {
     try {
       let data: SellReportInfo = await this.reportService.getSellInformation(
         from,
         to,
+        userFilter,
       );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -163,6 +167,7 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.sellPrint(
@@ -170,6 +175,7 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -204,10 +210,18 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<SellItem[]>>> {
     try {
       let data: PaginationReturnType<SellItem[]> =
-        await this.reportService.getItem(page, limit, filter, from, to);
+        await this.reportService.getItem(
+          page,
+          limit,
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -229,12 +243,14 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<ItemReportInfo>> {
     try {
       let data: ItemReportInfo = await this.reportService.getItemInformation(
         filter,
         from,
         to,
+        userFilter,
       );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -300,6 +316,7 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.itemPrint(
@@ -308,6 +325,7 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -362,6 +380,7 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<KogaAllReportInfo>> {
     try {
       let data: KogaAllReportInfo =
@@ -429,6 +448,7 @@ export class ReportController {
     @Query('filter') filter: Filter,
 
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.kogaAllPrint(
@@ -467,6 +487,7 @@ export class ReportController {
     @Query('page') page: Page,
     @Query('filter') filter: Filter,
     @Query('limit') limit: Limit,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Item[]>>> {
     try {
       let data: PaginationReturnType<Item[]> =
@@ -489,6 +510,7 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<KogaNullReportInfo>> {
     try {
       let data: KogaNullReportInfo =
@@ -555,6 +577,7 @@ export class ReportController {
     @Res() res: Response,
     @Query('filter') filter: Filter,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.kogaNullPrint(
@@ -593,6 +616,7 @@ export class ReportController {
     @Query('page') page: Page,
     @Query('filter') filter: Filter,
     @Query('limit') limit: Limit,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Item[]>>> {
     try {
       let data: PaginationReturnType<Item[]> =
@@ -615,6 +639,7 @@ export class ReportController {
     @Req() req: Request,
     @Res() res: Response,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<KogaLessReportInfo>> {
     try {
       let data: KogaLessReportInfo =
@@ -681,6 +706,7 @@ export class ReportController {
     @Res() res: Response,
     @Query('filter') filter: Filter,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.kogaLessPrint(
@@ -722,6 +748,7 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<ItemQuantityHistory[]>>> {
     try {
       let data: PaginationReturnType<ItemQuantityHistory[]> =
@@ -747,6 +774,7 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<KogaMovementReportInfo>> {
     try {
       let data: KogaMovementReportInfo =
@@ -817,6 +845,7 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.kogaMovementPrint(
@@ -860,6 +889,7 @@ export class ReportController {
     @Query('limit') limit: Limit,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Sell[]>>> {
     try {
       let data: PaginationReturnType<Sell[]> =
@@ -886,6 +916,7 @@ export class ReportController {
     @Res() res: Response,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<BillProfitReportInfo>> {
     try {
       let data: BillProfitReportInfo =
@@ -962,6 +993,7 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.billProfitPrint(
@@ -1006,6 +1038,7 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<SellItem[]>>> {
     try {
       let data: PaginationReturnType<SellItem[]> =
@@ -1034,6 +1067,7 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<ItemProfitReportInfo>> {
     try {
       let data: ItemProfitReportInfo =
@@ -1112,6 +1146,7 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.itemProfitPrint(
@@ -1154,6 +1189,7 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Expense[]>>> {
     try {
       let data: PaginationReturnType<Expense[]> =
@@ -1179,6 +1215,7 @@ export class ReportController {
 
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<ExpenseReportInfo>> {
     try {
       let data: ExpenseReportInfo =
@@ -1247,6 +1284,7 @@ export class ReportController {
     @Query('filter') filter: Filter,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.expensePrint(
@@ -1287,6 +1325,7 @@ export class ReportController {
     @Query('limit') limit: Limit,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<CaseReport[]>>> {
     try {
       let data: PaginationReturnType<CaseReport[]> =
@@ -1310,6 +1349,7 @@ export class ReportController {
     @Res() res: Response,
     @Query('from') from: From,
     @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<CaseReportInfo>> {
     try {
       let data: CaseReportInfo = await this.reportService.getCaseInformation(
@@ -1379,6 +1419,7 @@ export class ReportController {
     @Query('from') from: From,
     @Query('to') to: To,
     @Query('search') search: Search,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<string | Uint8Array>> {
     try {
       let data = await this.reportService.casePrint(

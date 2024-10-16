@@ -50,7 +50,8 @@ export class UserService {
           if (filter != '' && filter) {
             this.where('role.id', filter);
           }
-
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
@@ -120,7 +121,8 @@ export class UserService {
           if (filter != '' && filter) {
             this.where('role.id', filter);
           }
-
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
