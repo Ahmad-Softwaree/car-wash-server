@@ -358,10 +358,11 @@ export class ReportController {
     @Query('page') page: Page,
     @Query('limit') limit: Limit,
     @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
   ): Promise<Response<PaginationReturnType<Item[]>>> {
     try {
       let data: PaginationReturnType<Item[]> =
-        await this.reportService.getKogaAll(page, limit, filter);
+        await this.reportService.getKogaAll(page, limit, filter, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -384,7 +385,7 @@ export class ReportController {
   ): Promise<Response<KogaAllReportInfo>> {
     try {
       let data: KogaAllReportInfo =
-        await this.reportService.getKogaAllInformation(filter);
+        await this.reportService.getKogaAllInformation(filter, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -455,6 +456,7 @@ export class ReportController {
         search,
         filter,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -491,7 +493,7 @@ export class ReportController {
   ): Promise<Response<PaginationReturnType<Item[]>>> {
     try {
       let data: PaginationReturnType<Item[]> =
-        await this.reportService.getKogaNull(page, limit, filter);
+        await this.reportService.getKogaNull(page, limit, filter, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -514,7 +516,7 @@ export class ReportController {
   ): Promise<Response<KogaNullReportInfo>> {
     try {
       let data: KogaNullReportInfo =
-        await this.reportService.getKogaNullInformation(filter);
+        await this.reportService.getKogaNullInformation(filter, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -584,6 +586,7 @@ export class ReportController {
         search,
         filter,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -620,7 +623,7 @@ export class ReportController {
   ): Promise<Response<PaginationReturnType<Item[]>>> {
     try {
       let data: PaginationReturnType<Item[]> =
-        await this.reportService.getKogaLess(page, limit, filter);
+        await this.reportService.getKogaLess(page, limit, filter, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -643,7 +646,7 @@ export class ReportController {
   ): Promise<Response<KogaLessReportInfo>> {
     try {
       let data: KogaLessReportInfo =
-        await this.reportService.getKogaLessInformation(filter);
+        await this.reportService.getKogaLessInformation(filter, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -713,6 +716,7 @@ export class ReportController {
         search,
         filter,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -752,7 +756,14 @@ export class ReportController {
   ): Promise<Response<PaginationReturnType<ItemQuantityHistory[]>>> {
     try {
       let data: PaginationReturnType<ItemQuantityHistory[]> =
-        await this.reportService.getKogaMovement(page, limit, filter, from, to);
+        await this.reportService.getKogaMovement(
+          page,
+          limit,
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -778,7 +789,12 @@ export class ReportController {
   ): Promise<Response<KogaMovementReportInfo>> {
     try {
       let data: KogaMovementReportInfo =
-        await this.reportService.getKogaMovementInformation(filter, from, to);
+        await this.reportService.getKogaMovementInformation(
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -854,6 +870,7 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -893,7 +910,13 @@ export class ReportController {
   ): Promise<Response<PaginationReturnType<Sell[]>>> {
     try {
       let data: PaginationReturnType<Sell[]> =
-        await this.reportService.getBillProfit(page, limit, from, to);
+        await this.reportService.getBillProfit(
+          page,
+          limit,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -920,7 +943,7 @@ export class ReportController {
   ): Promise<Response<BillProfitReportInfo>> {
     try {
       let data: BillProfitReportInfo =
-        await this.reportService.getBillProfitInformation(from, to);
+        await this.reportService.getBillProfitInformation(from, to, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1001,6 +1024,7 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -1042,7 +1066,14 @@ export class ReportController {
   ): Promise<Response<PaginationReturnType<SellItem[]>>> {
     try {
       let data: PaginationReturnType<SellItem[]> =
-        await this.reportService.getItemProfit(page, limit, filter, from, to);
+        await this.reportService.getItemProfit(
+          page,
+          limit,
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1071,7 +1102,12 @@ export class ReportController {
   ): Promise<Response<ItemProfitReportInfo>> {
     try {
       let data: ItemProfitReportInfo =
-        await this.reportService.getItemProfitInformation(filter, from, to);
+        await this.reportService.getItemProfitInformation(
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1155,6 +1191,7 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -1193,7 +1230,14 @@ export class ReportController {
   ): Promise<Response<PaginationReturnType<Expense[]>>> {
     try {
       let data: PaginationReturnType<Expense[]> =
-        await this.reportService.getExpense(page, limit, filter, from, to);
+        await this.reportService.getExpense(
+          page,
+          limit,
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1219,7 +1263,12 @@ export class ReportController {
   ): Promise<Response<ExpenseReportInfo>> {
     try {
       let data: ExpenseReportInfo =
-        await this.reportService.getExpenseInformation(filter, from, to);
+        await this.reportService.getExpenseInformation(
+          filter,
+          from,
+          to,
+          userFilter,
+        );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1293,6 +1342,7 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({
@@ -1329,7 +1379,7 @@ export class ReportController {
   ): Promise<Response<PaginationReturnType<CaseReport[]>>> {
     try {
       let data: PaginationReturnType<CaseReport[]> =
-        await this.reportService.getCase(page, limit, from, to);
+        await this.reportService.getCase(page, limit, from, to, userFilter);
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -1355,6 +1405,7 @@ export class ReportController {
       let data: CaseReportInfo = await this.reportService.getCaseInformation(
         from,
         to,
+        userFilter,
       );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -1427,6 +1478,7 @@ export class ReportController {
         from,
         to,
         req['user'].id,
+        userFilter,
       );
       if (data.report_print_modal) {
         res.set({

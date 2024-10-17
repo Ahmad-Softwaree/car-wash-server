@@ -149,23 +149,33 @@ export class ReservationService {
           if (colorFilter != '' && colorFilter) {
             this.where('color.id', colorFilter);
           }
+        })
+        .andWhere(function () {
           if (carModelFilter != '' && carModelFilter) {
             this.where('car_model.id', carModelFilter);
           }
+        })
+        .andWhere(function () {
           if (carTypeFilter != '' && carTypeFilter) {
             this.where('car_type.id', carTypeFilter);
           }
+        })
+        .andWhere(function () {
           if (serviceFilter != '' && serviceFilter) {
             this.where('service.id', serviceFilter);
           }
+        })
+        .andWhere(function () {
           if (userFilter != '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
               userFilter,
             );
           }
+        })
+        .andWhere(function () {
           if (filter != '' && filter) {
-            if (filter == 'all') return true;
+            if (filter == 'all') return true; // This will not work with .where; handle it differently if needed
             if (filter == 'completed') {
               return this.where('reservation.completed', true);
             }
@@ -174,6 +184,7 @@ export class ReservationService {
             }
           }
         })
+
         .limit(limit)
         .orderBy('id', 'desc');
 
@@ -255,23 +266,33 @@ export class ReservationService {
           if (colorFilter != '' && colorFilter) {
             this.where('color.id', colorFilter);
           }
+        })
+        .andWhere(function () {
           if (carModelFilter != '' && carModelFilter) {
             this.where('car_model.id', carModelFilter);
           }
+        })
+        .andWhere(function () {
           if (carTypeFilter != '' && carTypeFilter) {
             this.where('car_type.id', carTypeFilter);
           }
+        })
+        .andWhere(function () {
           if (serviceFilter != '' && serviceFilter) {
             this.where('service.id', serviceFilter);
           }
+        })
+        .andWhere(function () {
           if (userFilter != '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
               userFilter,
             );
           }
+        })
+        .andWhere(function () {
           if (filter != '' && filter) {
-            if (filter == 'all') return true;
+            if (filter == 'all') return true; // This will not work with .where; handle it differently if needed
             if (filter == 'completed') {
               return this.where('reservation.completed', true);
             }

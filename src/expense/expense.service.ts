@@ -49,16 +49,20 @@ export class ExpenseService {
           if (filter !== '' && filter) {
             this.where('expense.type_id', filter);
           }
+        })
+        .andWhere(function () {
+          if (from !== '' && from && to !== '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('expense.date', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
           if (userFilter !== '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
               userFilter,
             );
-          }
-          if (from !== '' && from && to !== '' && to) {
-            const fromDate = timestampToDateString(Number(from));
-            const toDate = timestampToDateString(Number(to));
-            this.whereBetween('expense.date', [fromDate, toDate]);
           }
         })
         .limit(limit)
@@ -109,16 +113,20 @@ export class ExpenseService {
           if (filter !== '' && filter) {
             this.where('expense.type_id', filter);
           }
+        })
+        .andWhere(function () {
+          if (from !== '' && from && to !== '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('expense.date', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
           if (userFilter !== '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
               userFilter,
             );
-          }
-          if (from !== '' && from && to !== '' && to) {
-            const fromDate = timestampToDateString(Number(from));
-            const toDate = timestampToDateString(Number(to));
-            this.whereBetween('expense.date', [fromDate, toDate]);
           }
         })
         .limit(limit)

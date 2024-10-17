@@ -93,6 +93,8 @@ export class ReportService {
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (userFilter && userFilter != '') {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
@@ -151,6 +153,8 @@ export class ReportService {
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (userFilter && userFilter != '') {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
@@ -262,16 +266,20 @@ export class ReportService {
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
-          if (search && search !== '') {
-            this.where('createdUser.username', 'ilike', `%${search}%`)
-              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
-          }
+        })
+        .andWhere(function () {
           if (userFilter && userFilter != '') {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
               userFilter,
             );
+          }
+        })
+        .andWhere(function () {
+          if (search && search !== '') {
+            this.where('createdUser.username', 'ilike', `%${search}%`)
+              .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
         .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
@@ -533,16 +541,20 @@ export class ReportService {
               `%${filter}%`,
             ]);
           }
-          if (from !== '' && from && to !== '' && to) {
-            const fromDate = timestampToDateString(Number(from));
-            const toDate = timestampToDateString(Number(to));
-            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
-          }
+        })
+        .andWhere(function () {
           if (userFilter && userFilter != '') {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
               userFilter,
             );
+          }
+        })
+        .andWhere(function () {
+          if (from !== '' && from && to !== '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
         })
         .andWhere('sell_item.deleted', false)
@@ -680,11 +692,23 @@ export class ReportService {
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
@@ -693,12 +717,6 @@ export class ReportService {
               .orWhereRaw('CAST(sell_item.id AS TEXT) ILIKE ?', [
                 `%${search}%`,
               ]);
-          }
-          if (userFilter && userFilter != '') {
-            this.where('createdUser.id', userFilter).orWhere(
-              'updatedUser.id',
-              userFilter,
-            );
           }
         })
         .orderBy('item.id', 'desc');
@@ -857,6 +875,7 @@ ${data.item
     page: Page,
     limit: Limit,
     filter: Filter,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Item[]>> {
     try {
       const items: Item[] = await this.knex<Item>('item')
@@ -883,6 +902,14 @@ ${data.item
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .groupBy(
@@ -916,7 +943,10 @@ ${data.item
     }
   }
 
-  async getKogaAllInformation(filter: Filter): Promise<KogaAllReportInfo> {
+  async getKogaAllInformation(
+    filter: Filter,
+    userFilter: Filter,
+  ): Promise<KogaAllReportInfo> {
     try {
       const itemData: any = await this.knex<Item>('item')
         .select(
@@ -935,13 +965,24 @@ ${data.item
             'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
+
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .where(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('item.deleted', false)
@@ -1050,6 +1091,7 @@ ${data.item
   async kogaAllPrintData(
     search: Search,
     filter: Filter,
+    userFilter: Filter,
   ): Promise<{
     item: Item[];
     info: KogaAllReportInfo;
@@ -1080,7 +1122,16 @@ ${data.item
               `%${filter}%`,
             ]);
           }
-
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
@@ -1098,7 +1149,7 @@ ${data.item
         .orderBy('item.id', 'desc');
 
       let info = !search
-        ? await this.getKogaAllInformation(filter)
+        ? await this.getKogaAllInformation(filter, userFilter)
         : await this.getKogaAllInformationSearch(search);
 
       return { item, info };
@@ -1111,6 +1162,7 @@ ${data.item
     search: Search,
     filter: Filter,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -1135,7 +1187,7 @@ ${data.item
         .select('username')
         .first();
 
-      let data = await this.kogaAllPrintData(search, filter);
+      let data = await this.kogaAllPrintData(search, filter, userFilter);
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -1260,6 +1312,7 @@ ${data.item
     page: Page,
     limit: Limit,
     filter: Filter,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Item[]>> {
     try {
       const items: Item[] = await this.knex<Item>('item')
@@ -1286,6 +1339,14 @@ ${data.item
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .groupBy(
@@ -1323,7 +1384,10 @@ ${data.item
     }
   }
 
-  async getKogaNullInformation(filter: Filter): Promise<KogaNullReportInfo> {
+  async getKogaNullInformation(
+    filter: Filter,
+    userFilter: Filter,
+  ): Promise<KogaNullReportInfo> {
     try {
       const itemData: any = await this.knex<Item>('item')
         .select(
@@ -1342,6 +1406,8 @@ ${data.item
             'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',
           ),
         )
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
         .where(function () {
@@ -1349,6 +1415,14 @@ ${data.item
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('item.deleted', false)
@@ -1467,6 +1541,7 @@ ${data.item
   async kogaNullPrintData(
     search: Search,
     filter: Filter,
+    userFilter: Filter,
   ): Promise<{
     item: Item[];
     info: KogaNullReportInfo;
@@ -1497,7 +1572,16 @@ ${data.item
               `%${filter}%`,
             ]);
           }
-
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
@@ -1518,7 +1602,7 @@ ${data.item
         .orderBy('item.id', 'desc');
 
       let info = !search
-        ? await this.getKogaNullInformation(filter)
+        ? await this.getKogaNullInformation(filter, userFilter)
         : await this.getKogaNullInformationSearch(search);
 
       return { item, info };
@@ -1531,6 +1615,7 @@ ${data.item
     search: Search,
     filter: Filter,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -1555,7 +1640,7 @@ ${data.item
         .select('username')
         .first();
 
-      let data = await this.kogaNullPrintData(search, filter);
+      let data = await this.kogaNullPrintData(search, filter, userFilter);
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -1673,12 +1758,13 @@ ${data.item
     }
   }
 
-  //KOGA NULL REPORT
+  //KOGA LESS REPORT
 
   async getKogaLess(
     page: Page,
     limit: Limit,
     filter: Filter,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Item[]>> {
     try {
       let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
@@ -1710,6 +1796,14 @@ ${data.item
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .groupBy(
@@ -1752,7 +1846,10 @@ ${data.item
     }
   }
 
-  async getKogaLessInformation(filter: Filter): Promise<KogaLessReportInfo> {
+  async getKogaLessInformation(
+    filter: Filter,
+    userFilter: Filter,
+  ): Promise<KogaLessReportInfo> {
     try {
       let config: Pick<Config, 'item_less_from'> = await this.knex<Config>(
         'config',
@@ -1763,11 +1860,21 @@ ${data.item
         .select(this.knex.raw('COUNT(DISTINCT item.id) as total_count'))
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .leftJoin('sell_item', 'item.id', 'sell_item.item_id')
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .where(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('item.deleted', false)
@@ -1892,6 +1999,7 @@ ${data.item
   async kogaLessPrintData(
     search: Search,
     filter: Filter,
+    userFilter: Filter,
   ): Promise<{
     item: Item[];
     info: KogaLessReportInfo;
@@ -1927,7 +2035,16 @@ ${data.item
               `%${filter}%`,
             ]);
           }
-
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
@@ -1953,7 +2070,7 @@ ${data.item
         .orderBy('item.id', 'desc');
 
       let info = !search
-        ? await this.getKogaLessInformation(filter)
+        ? await this.getKogaLessInformation(filter, userFilter)
         : await this.getKogaLessInformationSearch(search);
 
       return { item, info };
@@ -1966,6 +2083,7 @@ ${data.item
     search: Search,
     filter: Filter,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -1990,7 +2108,7 @@ ${data.item
         .select('username')
         .first();
 
-      let data = await this.kogaLessPrintData(search, filter);
+      let data = await this.kogaLessPrintData(search, filter, userFilter);
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -2104,6 +2222,7 @@ ${data.item
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<ItemQuantityHistory[]>> {
     try {
       const items: ItemQuantityHistory[] = await this.knex<ItemQuantityHistory>(
@@ -2130,7 +2249,8 @@ ${data.item
               `%${filter}%`,
             ]);
           }
-
+        })
+        .andWhere(function () {
           if (from && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
@@ -2138,6 +2258,11 @@ ${data.item
               fromDate,
               toDate,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('user.id', userFilter);
           }
         })
         .orderBy('item_quantity_history.id', 'desc')
@@ -2169,6 +2294,7 @@ ${data.item
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<KogaMovementReportInfo> {
     try {
       const itemData: any = await this.knex<ItemQuantityHistory>(
@@ -2188,6 +2314,8 @@ ${data.item
             'SUM(COALESCE(item_quantity_history.quantity, 0) * item_quantity_history.item_purchase_price) as total_cost',
           ),
         )
+        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id')
+
         .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
         .leftJoin('item_type', 'item.type_id', 'item_type.id')
         .where('item.deleted', false)
@@ -2197,7 +2325,8 @@ ${data.item
               `%${filter}%`,
             ]);
           }
-
+        })
+        .andWhere(function () {
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
@@ -2205,6 +2334,11 @@ ${data.item
               fromDate,
               toDate,
             ]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('user.id', userFilter);
           }
         });
 
@@ -2300,6 +2434,7 @@ ${data.item
     search: Search,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<{
     item: ItemQuantityHistory[];
     info: KogaMovementReportInfo;
@@ -2330,7 +2465,13 @@ ${data.item
               `%${filter}%`,
             ]);
           }
-
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('user.id', userFilter);
+          }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
@@ -2339,6 +2480,8 @@ ${data.item
               toDate,
             ]);
           }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.where('user.username', 'ilike', `%${search}%`)
               .orWhereRaw('CAST(item_quantity_history.id AS TEXT) ILIKE ?', [
@@ -2353,7 +2496,7 @@ ${data.item
         .orderBy('item_quantity_history.id', 'desc');
 
       let info = !search
-        ? await this.getKogaMovementInformation(filter, from, to)
+        ? await this.getKogaMovementInformation(filter, from, to, userFilter)
         : await this.getKogaMovementInformationSearch(search);
 
       return { item, info };
@@ -2368,6 +2511,7 @@ ${data.item
     from: From,
     to: To,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -2392,7 +2536,13 @@ ${data.item
         .select('username')
         .first();
 
-      let data = await this.kogaMovementPrintData(filter, search, from, to);
+      let data = await this.kogaMovementPrintData(
+        filter,
+        search,
+        from,
+        to,
+        userFilter,
+      );
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -2505,6 +2655,7 @@ ${pdfStyle}
     limit: Limit,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Sell[]>> {
     try {
       const sell: Sell[] = await this.knex<Sell>('sell')
@@ -2530,6 +2681,14 @@ ${pdfStyle}
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
@@ -2560,6 +2719,7 @@ ${pdfStyle}
   async getBillProfitInformation(
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<BillProfitReportInfo> {
     try {
       const sellData: any = await this.knex<Sell>('sell')
@@ -2577,12 +2737,21 @@ ${pdfStyle}
           ),
         )
         .leftJoin('sell_item', 'sell.id', 'sell_item.sell_id')
-
+        .leftJoin('user as createdUser', 'sell.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'sell.updated_by', 'updatedUser.id')
         .where(function () {
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('sell_item.deleted', false)
@@ -2672,6 +2841,7 @@ ${pdfStyle}
     search: Search,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<{
     sell: Sell[];
     info: BillProfitReportInfo;
@@ -2701,17 +2871,27 @@ ${pdfStyle}
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
               .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
         .groupBy('sell.id', 'createdUser.username', 'updatedUser.username')
         .orderBy('sell.id', 'desc');
 
       let info = !search
-        ? await this.getBillProfitInformation(from, to)
+        ? await this.getBillProfitInformation(from, to, userFilter)
         : await this.getBillProfitInformationSearch(search);
 
       return { sell, info };
@@ -2725,6 +2905,7 @@ ${pdfStyle}
     from: From,
     to: To,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -2749,7 +2930,7 @@ ${pdfStyle}
         .select('username')
         .first();
 
-      let data = await this.billProfitPrintData(search, from, to);
+      let data = await this.billProfitPrintData(search, from, to, userFilter);
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -2862,6 +3043,7 @@ ${data.sell
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<SellItem[]>> {
     try {
       const sellItem: SellItem[] = await this.knex<SellItem>('sell_item')
@@ -2899,6 +3081,16 @@ ${data.sell
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
@@ -2933,6 +3125,7 @@ ${data.sell
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<ItemProfitReportInfo> {
     try {
       const itemData: any = await this.knex<SellItem>('sell_item')
@@ -2957,17 +3150,28 @@ ${data.sell
 
         .leftJoin('item', 'item.id', 'sell_item.item_id') // Join with item table
         .leftJoin('item_type', 'item.type_id', 'item_type.id') // Join with item_type to get type name
-
+        .leftJoin('user as createdUser', 'item.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'item.updated_by', 'updatedUser.id')
         .where(function () {
           if (filter && filter != '') {
             this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('sell_item.deleted', false)
@@ -3089,6 +3293,7 @@ ${data.sell
     search: Search,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<{
     item: SellItem[];
     info: ItemProfitReportInfo;
@@ -3128,11 +3333,15 @@ ${data.sell
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
@@ -3142,10 +3351,18 @@ ${data.sell
               .orWhereRaw('CAST(sell.id AS TEXT) ILIKE ?', [`%${search}%`]);
           }
         })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
         .orderBy('item.id', 'desc');
 
       let info = !search
-        ? await this.getItemProfitInformation(filter, from, to)
+        ? await this.getItemProfitInformation(filter, from, to, userFilter)
         : await this.getItemProfitInformationSearch(search);
 
       return { item, info };
@@ -3160,6 +3377,7 @@ ${data.sell
     from: From,
     to: To,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -3184,7 +3402,13 @@ ${data.sell
         .select('username')
         .first();
 
-      let data = await this.itemProfitPrintData(filter, search, from, to);
+      let data = await this.itemProfitPrintData(
+        filter,
+        search,
+        from,
+        to,
+        userFilter,
+      );
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -3308,6 +3532,7 @@ ${data.item
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<Expense[]>> {
     try {
       const expense: Expense[] = await this.knex<Expense>('expense')
@@ -3329,10 +3554,20 @@ ${data.item
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('expense.created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .orderBy('expense.id', 'desc')
@@ -3363,11 +3598,15 @@ ${data.item
     filter: Filter,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<ExpenseReportInfo> {
     try {
       const itemData: any = await this.knex<Expense>('expense')
         .select(this.knex.raw('SUM(expense.price) as total_price'))
         .leftJoin('expense_type', 'expense.type_id', 'expense_type.id')
+        .leftJoin('user as createdUser', 'expense.created_by', 'createdUser.id')
+        .leftJoin('user as updatedUser', 'expense.updated_by', 'updatedUser.id')
+
         .where('expense.deleted', false)
         .where(function () {
           if (filter && filter != '') {
@@ -3375,10 +3614,20 @@ ${data.item
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('expense.created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
           }
         })
         .andWhere('expense.deleted', false);
@@ -3451,6 +3700,7 @@ ${data.item
     search: Search,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<{
     info: ExpenseReportInfo;
     expense: Expense[];
@@ -3476,11 +3726,15 @@ ${data.item
               `%${filter}%`,
             ]);
           }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('exepnse.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             // Searching by the username of the created user
             this.where('createdUser.username', 'ilike', `%${search}%`)
@@ -3488,10 +3742,18 @@ ${data.item
               .orWhereRaw('CAST(exepnse.id AS TEXT) ILIKE ?', [`%${search}%`]); // Search by expense id
           }
         })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('createdUser.id', userFilter).orWhere(
+              'updatedUser.id',
+              userFilter,
+            );
+          }
+        })
         .orderBy('expense.id', 'desc');
 
       let info = !search
-        ? await this.getExpenseInformation(filter, from, to)
+        ? await this.getExpenseInformation(filter, from, to, userFilter)
         : await this.getExpenseInformationSearch(search);
 
       return { expense, info };
@@ -3506,6 +3768,7 @@ ${data.item
     from: From,
     to: To,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -3530,7 +3793,13 @@ ${data.item
         .select('username')
         .first();
 
-      let data = await this.expensePrintData(filter, search, from, to);
+      let data = await this.expensePrintData(
+        filter,
+        search,
+        from,
+        to,
+        userFilter,
+      );
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -3629,6 +3898,7 @@ ${data.item
     limit: Limit,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<PaginationReturnType<CaseReport[]>> {
     try {
       const sell: CaseReport[] = await this.knex<SellItem>('sell_item')
@@ -3650,6 +3920,11 @@ ${data.item
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('user.id', userFilter);
           }
         })
         .groupBy('user.username', 'user.id')
@@ -3677,7 +3952,11 @@ ${data.item
     }
   }
 
-  async getCaseInformation(from: From, to: To): Promise<CaseReportInfo> {
+  async getCaseInformation(
+    from: From,
+    to: To,
+    userFilter: Filter,
+  ): Promise<CaseReportInfo> {
     try {
       let itemData: any = await this.knex<SellItem>('sell_item')
         .select(
@@ -3688,11 +3967,18 @@ ${data.item
             'COALESCE(SUM(sell_item.quantity), 0) as total_quantity',
           ), // Sum of quantities
         )
+        .leftJoin('user', 'sell_item.created_by', 'user.id')
+
         .where(function () {
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('created_at', [fromDate, toDate]);
+          }
+        })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('user.id', userFilter);
           }
         })
         .andWhere('deleted', false);
@@ -3775,6 +4061,7 @@ ${data.item
     search: Search,
     from: From,
     to: To,
+    userFilter: Filter,
   ): Promise<{
     sell: CaseReport[];
     info: CaseReportInfo;
@@ -3800,6 +4087,8 @@ ${data.item
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.where('user.username', 'ilike', `%${search}%`).orWhereRaw(
               'CAST(user.id AS TEXT) ILIKE ?',
@@ -3807,11 +4096,16 @@ ${data.item
             );
           }
         })
+        .andWhere(function () {
+          if (userFilter && userFilter != '') {
+            this.where('user.id', userFilter);
+          }
+        })
         .groupBy('user.username', 'user.id')
         .orderBy('sold_price', 'desc');
 
       let info = !search
-        ? await this.getCaseInformation(from, to)
+        ? await this.getCaseInformation(from, to, userFilter)
         : await this.getCaseInformationSearch(search);
 
       return { sell, info };
@@ -3825,6 +4119,7 @@ ${data.item
     from: From,
     to: To,
     user_id: number,
+    userFilter: Filter,
   ): Promise<{
     data: string | Uint8Array;
     report_print_modal: boolean;
@@ -3849,7 +4144,7 @@ ${data.item
         .select('username')
         .first();
 
-      let data = await this.casePrintData(search, from, to);
+      let data = await this.casePrintData(search, from, to, userFilter);
 
       let { browser, page } = await generatePuppeteer({});
       let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
@@ -4049,15 +4344,23 @@ ${data.item
           if (colorFilter != '' && colorFilter) {
             this.where('color.id', colorFilter);
           }
+        })
+        .andWhere(function () {
           if (carModelFilter != '' && carModelFilter) {
             this.where('car_model.id', carModelFilter);
           }
+        })
+        .andWhere(function () {
           if (carTypeFilter != '' && carTypeFilter) {
             this.where('car_type.id', carTypeFilter);
           }
+        })
+        .andWhere(function () {
           if (serviceFilter != '' && serviceFilter) {
             this.where('service.id', serviceFilter);
           }
+        })
+        .andWhere(function () {
           if (userFilter != '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
@@ -4065,6 +4368,7 @@ ${data.item
             );
           }
         })
+
         .orderBy('id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -4129,15 +4433,23 @@ ${data.item
           if (colorFilter != '' && colorFilter) {
             this.where('color.id', colorFilter);
           }
+        })
+        .andWhere(function () {
           if (carModelFilter != '' && carModelFilter) {
             this.where('car_model.id', carModelFilter);
           }
+        })
+        .andWhere(function () {
           if (carTypeFilter != '' && carTypeFilter) {
             this.where('car_type.id', carTypeFilter);
           }
+        })
+        .andWhere(function () {
           if (serviceFilter != '' && serviceFilter) {
             this.where('service.id', serviceFilter);
           }
+        })
+        .andWhere(function () {
           if (userFilter != '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
@@ -4283,6 +4595,8 @@ ${data.item
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('reservation.date_time', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (search && search !== '') {
             this.whereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [
               `%${search}%`,
@@ -4299,15 +4613,23 @@ ${data.item
           if (colorFilter != '' && colorFilter) {
             this.where('color.id', colorFilter);
           }
+        })
+        .andWhere(function () {
           if (carModelFilter != '' && carModelFilter) {
             this.where('car_model.id', carModelFilter);
           }
+        })
+        .andWhere(function () {
           if (carTypeFilter != '' && carTypeFilter) {
             this.where('car_type.id', carTypeFilter);
           }
+        })
+        .andWhere(function () {
           if (serviceFilter != '' && serviceFilter) {
             this.where('service.id', serviceFilter);
           }
+        })
+        .andWhere(function () {
           if (userFilter != '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',

@@ -28,7 +28,6 @@ import { RestoreSellDto } from './dto/restore-sell.dto';
 import { posStyle } from 'lib/static/pdf';
 import { randomUUID } from 'node:crypto';
 import { join } from 'path';
-import { readFileSync, unlinkSync } from 'fs';
 
 @Injectable()
 export class SellService {
@@ -65,6 +64,8 @@ export class SellService {
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (userFilter != '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',
@@ -118,6 +119,8 @@ export class SellService {
             const toDate = timestampToDateString(Number(to));
             this.whereBetween('sell.created_at', [fromDate, toDate]);
           }
+        })
+        .andWhere(function () {
           if (userFilter != '' && userFilter) {
             this.where('createdUser.id', userFilter).orWhere(
               'updatedUser.id',

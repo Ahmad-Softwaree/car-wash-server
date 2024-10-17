@@ -72,6 +72,8 @@ export class BackupService {
           if (filter != '' && filter) {
             this.where('backup.table', filter);
           }
+        })
+        .andWhere(function () {
           if (from != '' && from && to != '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
