@@ -3973,7 +3973,7 @@ ${data.item
           if (from !== '' && from && to !== '' && to) {
             const fromDate = timestampToDateString(Number(from));
             const toDate = timestampToDateString(Number(to));
-            this.whereBetween('created_at', [fromDate, toDate]);
+            this.whereBetween('sell_item.created_at', [fromDate, toDate]);
           }
         })
         .andWhere(function () {
@@ -3981,7 +3981,8 @@ ${data.item
             this.where('user.id', userFilter);
           }
         })
-        .andWhere('deleted', false);
+        .andWhere('sell_item.deleted', false)
+        .andWhere('sell_item.self_deleted', false);
 
       return itemData[0];
     } catch (error) {
@@ -4049,7 +4050,9 @@ ${data.item
             });
           }
         })
-        .andWhere('sell.deleted', false);
+        .andWhere('sell.deleted', false)
+        .andWhere('sell_item.deleted', false)
+        .andWhere('sell_item.self_deleted', false);
 
       return itemData[0]; // Return the aggregated data
     } catch (error) {
