@@ -513,10 +513,13 @@ export class SellService {
             left: '0mm',
           },
         });
+        console.log('pdfBuffer', pdfBuffer);
         if (!flag) {
+          console.log('before job');
           let jobId = await printer.print(pdfPath, {
             printer: activePrinter.name,
           });
+          console.log('afterJob');
           if (jobId == undefined || jobId == null) {
             await browser.close();
             return {
@@ -525,8 +528,9 @@ export class SellService {
             };
           }
         }
-
+        console.log('before close');
         await browser.close();
+        console.log('after close');
         if (flag) {
           return {
             data: pdfBuffer,
