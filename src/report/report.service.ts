@@ -959,7 +959,7 @@ ${data.item
             'SUM(item.item_purchase_price * item.quantity) as total_purchase_price',
           ),
           this.knex.raw(
-            'SUM(COALESCE(sell_item.quantity, 0) * item.item_sell_price) as total_sell_price',
+            'SUM(COALESCE(sell_item.quantity, 0) * sell_item.item_sell_price) as total_sell_price',
           ),
           this.knex.raw(
             'SUM(COALESCE(item.quantity, 0) * item.item_purchase_price) as total_cost',

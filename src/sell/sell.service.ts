@@ -541,6 +541,7 @@ export class SellService {
         throw new BadRequestException('مواد داخڵ کە بۆ سەر وەصڵ');
       }
     } catch (error) {
+      console.log(error);
       throw new Error(error.message);
     }
   }

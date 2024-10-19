@@ -312,6 +312,7 @@ export class SellController {
         res.status(HttpStatus.OK).json({ data: data.data });
       }
     } catch (error) {
+      console.log(error);
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .json({ error: error.message });
