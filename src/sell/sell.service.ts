@@ -517,7 +517,7 @@ export class SellService {
         if (!flag) {
           console.log('before job');
           let jobId = await printer.print(pdfPath, {
-            printer: activePrinter.name,
+            printer: '',
           });
           console.log('afterJob');
           if (jobId == undefined || jobId == null) {
