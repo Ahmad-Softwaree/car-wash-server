@@ -16,8 +16,6 @@ import { UpdateSellDto } from './dto/update-sell.dto';
 import { AddItemToSellDto } from './dto/add-item-to-sell.dto';
 import { UpdateItemToSellDto } from './dto/update-item-to-sell';
 import { ItemService } from 'src/item/item.service';
-import * as JsBarcode from 'jsbarcode';
-import { Canvas } from 'canvas';
 import {
   formatMoney,
   generatePaginationInfo,
@@ -35,11 +33,7 @@ export class SellService {
     @Inject('KnexConnection') private readonly knex: Knex,
     private itemService: ItemService,
   ) {}
-  generateBarcode(value) {
-    const canvas = new Canvas(60, 60, 'image');
-    JsBarcode(canvas, value);
-    return canvas.toBuffer();
-  }
+ 
   async getAll(
     page: Page,
     limit: Limit,
