@@ -12,6 +12,7 @@ import {
   Item,
   ItemQuantityHistory,
   ItemType,
+  Printer,
   Reservation,
   Role,
   Sell,
@@ -21,7 +22,6 @@ import {
 } from 'database/types';
 import { Knex } from 'knex';
 import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
-import { Printer } from 'pdf-to-printer';
 import {
   Filter,
   From,

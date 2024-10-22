@@ -14,24 +14,15 @@ import { Request, Response } from 'express';
 import { UserPart } from 'database/types';
 import { UserPartWithPartJoin } from 'src/types/user-part';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('user-part')
 @Controller('user-part')
 export class UserPartController {
   constructor(private readonly userPartService: UserPartService) {}
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Get User Parts' })
-  @ApiResponse({
-    status: 200,
-    description: 'User Parts retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'User Parts not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('user/:id')
   async getUserParts(
     @Req() req: Request,

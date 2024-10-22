@@ -32,7 +32,6 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 
 import { RoleWithItsParts } from 'src/types/role-part';
@@ -41,18 +40,10 @@ import UpdateRoleDto from './dto/update-role.dto';
 import { Role } from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('role')
 @Controller('role')
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({ summary: 'Get All Roles' })
-  @ApiResponse({
-    status: 200,
-    description: 'Roles retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Roles not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -73,13 +64,6 @@ export class RoleController {
     }
   }
   @PartName(['all'])
-  @ApiOperation({ summary: 'Get Select Roles' })
-  @ApiResponse({
-    status: 200,
-    description: 'Roles retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Roles not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/select')
   async getSelect(
     @Req() req: Request,
@@ -95,13 +79,6 @@ export class RoleController {
     }
   }
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted Roles' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted Roles retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted Roles not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -122,13 +99,6 @@ export class RoleController {
     }
   }
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({ summary: 'Search Roles' })
-  @ApiResponse({
-    status: 200,
-    description: 'Roles retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Roles not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -145,13 +115,6 @@ export class RoleController {
     }
   }
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({ summary: 'Search Roles' })
-  @ApiResponse({
-    status: 200,
-    description: 'Roles retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Roles not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -170,12 +133,6 @@ export class RoleController {
   }
 
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({ summary: 'Add RoleWithItsParts' })
-  @ApiResponse({
-    status: 200,
-    description: 'RoleWithItsParts created successfully.',
-  })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -192,17 +149,8 @@ export class RoleController {
         .json({ error: error.message });
     }
   }
+
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({
-    summary: 'Resotre RoleWithItsParts By Id (deleted flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'RoleWithItsParts ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'RoleWithItsParts deleted successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'RoleWithItsParts not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -218,15 +166,8 @@ export class RoleController {
         .json({ error: error.message });
     }
   }
+
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({ summary: 'Update RoleWithItsParts By Id' })
-  @ApiParam({ name: 'id', description: 'RoleWithItsParts ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'RoleWithItsParts Updated successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'RoleWithItsParts not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -244,17 +185,8 @@ export class RoleController {
         .json({ error: error.message });
     }
   }
+
   @PartName([ENUMs.ROLES_PART as string])
-  @ApiOperation({
-    summary: 'Delete RoleWithItsParts By Id (restore flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'RoleWithItsParts ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'RoleWithItsParts restore successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'RoleWithItsParts not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

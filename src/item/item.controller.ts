@@ -34,7 +34,6 @@ import {
 import { CreateItemDto } from './dto/create-item-dto';
 import { UpdateItemDto } from './dto/update-item-dto';
 import { PartGuard } from 'src/auth/part.guard';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PartName } from 'src/auth/part.decorator';
 import { ItemWithType } from 'src/types/item';
 import { ENUMs } from 'lib/enum';
@@ -42,16 +41,11 @@ import { ChangeItemQuantityDto } from './dto/change-item-quantity-dto';
 import { Item } from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('item')
 @Controller('item')
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
 
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Get All Items' })
-  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Items not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/less')
   async getLess(
     @Req() req: Request,
@@ -82,10 +76,6 @@ export class ItemController {
   }
 
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Search Items' })
-  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Items not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search_less')
   async searchLess(
     @Req() req: Request,
@@ -103,10 +93,6 @@ export class ItemController {
   }
 
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Get All Items' })
-  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Items not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -137,10 +123,6 @@ export class ItemController {
     }
   }
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Get All Items' })
-  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Items not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -171,10 +153,6 @@ export class ItemController {
     }
   }
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Search Items' })
-  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Items not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -191,10 +169,6 @@ export class ItemController {
     }
   }
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Search Items' })
-  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Items not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -211,14 +185,6 @@ export class ItemController {
     }
   }
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Get One ItemWithType' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemWithType retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemWithType not found.' })
-  @ApiParam({ name: 'id', description: 'ItemWithType ID', example: 1 })
-  @HttpCode(HttpStatus.OK)
   @Get(':id')
   async getOne(
     @Req() req: Request,
@@ -236,13 +202,6 @@ export class ItemController {
   }
 
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Add ItemWithType' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemWithType Added successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemWithType not found.' })
-  @HttpCode(HttpStatus.OK)
   @Post()
   @UsePipes(new ValidationPipe())
   async create(
@@ -260,11 +219,6 @@ export class ItemController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Resotre Item By Id (deleted flag in database)' })
-  @ApiParam({ name: 'id', description: 'Item ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Item deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -281,19 +235,6 @@ export class ItemController {
     }
   }
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Update ItemWithType' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemWithType Update successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemWithType not found.' })
-  @ApiParam({ name: 'id', description: 'ItemWithType ID', example: 1 })
-  @ApiParam({
-    name: 'type',
-    description: 'Increase Or Decrease',
-    example: 'increase',
-  })
-  @HttpCode(HttpStatus.OK)
   @Put('change_quantity/:id/:type')
   @UsePipes(new ValidationPipe())
   async changeQuantity(
@@ -320,14 +261,6 @@ export class ItemController {
   }
 
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Update ItemWithType' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemWithType Update successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemWithType not found.' })
-  @ApiParam({ name: 'id', description: 'ItemWithType ID', example: 1 })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -351,14 +284,6 @@ export class ItemController {
   }
 
   @PartName([ENUMs.KOGA_PART as string])
-  @ApiOperation({ summary: 'Delete ItemWithType' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemWithType Delete successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemWithType not found.' })
-  @ApiParam({ name: 'id', description: 'ItemWithType ID', example: 1 })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

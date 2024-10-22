@@ -1,6 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import * as printer from 'pdf-to-printer';
-import { Config, Item, Printer, Sell, SellItem, User } from 'database/types';
+import { Item, Printer, Sell, SellItem } from 'database/types';
 import { Knex } from 'knex';
 import {
   Filter,
@@ -16,16 +15,8 @@ import { UpdateSellDto } from './dto/update-sell.dto';
 import { AddItemToSellDto } from './dto/add-item-to-sell.dto';
 import { UpdateItemToSellDto } from './dto/update-item-to-sell';
 import { ItemService } from 'src/item/item.service';
-import {
-  formatMoney,
-  generatePaginationInfo,
-  generatePuppeteer,
-  timestampToDateString,
-} from 'lib/functions';
+import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
 import { RestoreSellDto } from './dto/restore-sell.dto';
-import { posStyle } from 'lib/static/pdf';
-import { randomUUID } from 'node:crypto';
-import { join } from 'path';
 
 @Injectable()
 export class SellService {
@@ -33,7 +24,7 @@ export class SellService {
     @Inject('KnexConnection') private readonly knex: Knex,
     private itemService: ItemService,
   ) {}
- 
+
   async getAll(
     page: Page,
     limit: Limit,
@@ -380,25 +371,11 @@ export class SellService {
       throw new Error(error.message);
     }
   }
-  async print(
-    sell_id: Id,
-    user_id: number,
-    where: 'pos' | 'items',
-  ): Promise<{
-    data: string | Uint8Array;
-    items_print_modal: boolean;
+  async print(sell_id: Id): Promise<{
+    sell: Sell;
+    sellItems: SellItem[];
   }> {
     try {
-      let config: Pick<Config, 'items_print_modal' | 'pos_print_modal'> =
-        await this.knex<Config>('config')
-          .select('items_print_modal', 'pos_print_modal')
-          .first();
-      let flag = false;
-      if (where == 'items') {
-        flag = config.items_print_modal;
-      } else {
-        flag = config.pos_print_modal;
-      }
       let activePrinter = await this.knex<Printer>('printer')
         .where('active', true)
         .first();
@@ -407,134 +384,23 @@ export class SellService {
         throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
       }
 
-      let user: Pick<User, 'username'> = await this.knex<User>('user')
-        .where('deleted', false)
-        .andWhere('id', user_id)
-        .select('username')
-        .first();
-
-      let { browser, page } = await generatePuppeteer({});
       let sell: Sell = await this.findOne(sell_id);
 
-      const sellItem: SellItem[] = await this.knex<SellItem>('sell_item')
+      const sellItems: SellItem[] = await this.knex<SellItem>('sell_item')
         .select('sell_item.*', 'item.id as item_id', 'item.name as item_name')
         .leftJoin('item', 'sell_item.item_id', 'item.id')
         .where('sell_item.sell_id', sell_id)
         .andWhere('sell_item.deleted', false);
-      const totalSellPrice = sellItem.reduce(
-        (total, item) => total + item.item_sell_price,
-        0,
-      );
 
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1;
-      const day = today.getDate();
-      const hours = today.getHours();
-      const minutes = today.getMinutes();
-
-      const formattedDate = `${year} - ${month} - ${day} \t ${hours}:${minutes}`;
-      const MAX_HEIGHT = 520; // Set a maximum height (in pixels) for your PDF
-
-      const calculateHeight = MAX_HEIGHT + 40 * sellItem.length;
-
-      let pdfPath = join(__dirname, randomUUID().replace(/-/g, '') + '.pdf');
-      if (sellItem.length > 0) {
-        const htmlContent = `
-        <!DOCTYPE html>
-
-<html lang="en">
-  <head>
-
- ${posStyle}
-  </head>
-
-  <body>
-    <div class="pos">
-      <p class="username">وەصڵی فرۆشتن</p>
-      <h1>غەسلی ڕەها</h1>
-
-      <div class="info_black">
-        <p>بەرواری وەصڵ : ${formattedDate}</p>
-        <p>کارمەند : ${user.username}</p>
-        <p>ژ.وەصڵ : ${sell.id}</p>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>کۆ</th>
-            <th>نرخ</th>
-            <th>عدد</th>
-            <th>کاڵا</th>
-          </tr>
-        </thead>
-        <tbody id="table-body">
-            ${sellItem
-              .map(
-                (val: SellItem) => `
-            <tr>
-              <td>${formatMoney(val.quantity * val.item_sell_price)}</td>
-              <td>${formatMoney(val.item_sell_price)}</td>
-              <td>${formatMoney(val.quantity)}</td>
-              <td>${val.item_name}</td>
-            </tr>`,
-              )
-              .join('')}
-        </tbody>
-      </table>
-      <div class="info_black">
-        <p>ژمارەی کاڵا : ${sellItem.length}</p>
-        <p>نرخی گشتی : ${formatMoney(totalSellPrice)}</p>
-        <p>داشکاندن : ${formatMoney(sell.discount)}</p>
-        <p>نرخی دوای داشکان : ${formatMoney(totalSellPrice - sell.discount)}</p>
-      </div>
-    </div>
-  </body>
-</html>
-        `;
-        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
-
-        const pdfBuffer = await page.pdf({
-          path: pdfPath,
-          height: `${calculateHeight}px`,
-          width: '90mm',
-          printBackground: true,
-          waitForFonts: true,
-          margin: {
-            top: '0mm',
-            right: '0mm',
-            bottom: '0mm',
-            left: '0mm',
-          },
-        });
-        if (!flag) {
-          let jobId = await printer.print(pdfPath, {
-            printer: activePrinter.name,
-          });
-          if (jobId == undefined || jobId == null) {
-            await browser.close();
-            return {
-              data: pdfBuffer,
-              items_print_modal: true,
-            };
-          }
-        }
-        await browser.close();
-        if (flag) {
-          return {
-            data: pdfBuffer,
-            items_print_modal: flag,
-          };
-        }
+      if (sellItems.length > 0) {
         return {
-          data: 'success',
-          items_print_modal: flag,
+          sell,
+          sellItems,
         };
       } else {
         throw new BadRequestException('مواد داخڵ کە بۆ سەر وەصڵ');
       }
     } catch (error) {
-      console.log(error);
       throw new Error(error.message);
     }
   }

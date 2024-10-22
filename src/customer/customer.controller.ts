@@ -33,24 +33,15 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { Customer } from 'database/types';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 import CreateCustomerDto from './dto/create-customer-dto';
 import UpdateCustomerDto from './dto/update-customer-dto';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('customer')
 @Controller('customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Get All Customers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Customers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Customers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -71,13 +62,6 @@ export class CustomerController {
     }
   }
   @PartName(['all'])
-  @ApiOperation({ summary: 'Get Select Customers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Customers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Customers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/select')
   async getSelect(
     @Req() req: Request,
@@ -93,13 +77,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted Customers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted Customers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted Customers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -120,13 +97,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Search Customers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Customers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Customers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -143,13 +113,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Search Customers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Customers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Customers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -167,11 +130,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Get Customer By Id' })
-  @ApiParam({ name: 'id', description: 'Customer ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Customer retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Customer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get(':id')
   async getOne(
     @Req() req: Request,
@@ -188,9 +146,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Add Customer' })
-  @ApiResponse({ status: 200, description: 'Customer created successfully.' })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -211,13 +166,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({
-    summary: 'Resotre Customer By Id (deleted flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'Customer ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Customer deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'Customer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -234,11 +182,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Update Customer By Id' })
-  @ApiParam({ name: 'id', description: 'Customer ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Customer Updated successfully.' })
-  @ApiResponse({ status: 404, description: 'Customer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -261,11 +204,6 @@ export class CustomerController {
     }
   }
   @PartName([ENUMs.CUSTOMERS_PART as string])
-  @ApiOperation({ summary: 'Delete Customer By Id (restore flag in database)' })
-  @ApiParam({ name: 'id', description: 'Customer ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Customer restore successfully.' })
-  @ApiResponse({ status: 404, description: 'Customer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

@@ -1,6 +1,4 @@
 import { Knex } from 'knex';
-import { puppeteerConfig } from 'lib/static/pdf';
-import puppeteer, { Browser, Page as PuppeteerPage } from 'puppeteer';
 import { Limit, Page } from 'src/types/global';
 
 export const generatePaginationInfo = async <T>(
@@ -100,24 +98,3 @@ export function formatMoney(value: any): string {
   }
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
-
-export const generatePuppeteer = async ({
-  pageViewW = 1080,
-  pageViewH = 1024,
-}: {
-  pageViewW?: number;
-  pageViewH?: number;
-}): Promise<{
-  browser: Browser;
-  page: PuppeteerPage;
-}> => {
-  try {
-    const browser: Browser = await puppeteer.launch(puppeteerConfig);
-    const page: PuppeteerPage = await browser.newPage();
-    await page.setViewport({ width: pageViewW, height: pageViewH });
-
-    return { browser, page };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-};

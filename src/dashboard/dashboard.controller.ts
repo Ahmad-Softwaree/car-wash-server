@@ -10,29 +10,24 @@ import {
 import { DashboardService } from './dashboard.service';
 import { PartGuard } from 'src/auth/part.guard';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 import { PartName } from 'src/auth/part.decorator';
 import { Request, Response } from 'express';
+import { Dashboard } from 'src/types/dashboard';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('dashboard')
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @PartName([ENUMs.DASHBOARD_PART as string])
-  @ApiOperation({ summary: 'Get All Users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
-  async getAll(
+  async get(
     @Req() req: Request,
     @Res() res: Response,
-  ): Promise<Response<any>> {
+  ): Promise<Response<Dashboard>> {
     try {
-      let dashboards: any = await this.dashboardService.get();
+      let dashboards: Dashboard = await this.dashboardService.get();
       return res.status(HttpStatus.OK).json(dashboards);
     } catch (error) {
       return res

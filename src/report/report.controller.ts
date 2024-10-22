@@ -3,6 +3,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
   Query,
   Req,
   Res,
@@ -11,7 +13,6 @@ import {
 import { ReportService } from './report.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
 import { Request, Response } from 'express';
@@ -45,20 +46,16 @@ import {
   KogaMovementReportInfo,
   KogaNullReportInfo,
   ReservationReportInfo,
+  SellReportData,
   SellReportInfo,
 } from 'src/types/report';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('report')
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
   //SELL REPORT
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Sell' })
-  @ApiResponse({ status: 200, description: 'Sell retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Sell not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('sell')
   async getSell(
     @Req() req: Request,
@@ -86,10 +83,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Sell' })
-  @ApiResponse({ status: 200, description: 'Sell retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Sell not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('sell/information')
   async getSellInformation(
     @Req() req: Request,
@@ -113,10 +106,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Sell' })
-  @ApiResponse({ status: 200, description: 'Sell retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Sell not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('sell_search')
   async getSellSearch(
     @Req() req: Request,
@@ -134,10 +123,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Sell' })
-  @ApiResponse({ status: 200, description: 'Sell retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Sell not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('sell_search/information')
   async getSellInformationSearch(
     @Req() req: Request,
@@ -154,53 +139,36 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-
-  @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Sell' })
-  @ApiResponse({ status: 200, description: 'Sell retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Sell not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('sell/print')
-  async sellPrint(
+  @PartName([ENUMs.CREATE_PSULA_PART as string, ENUMs.SELL_PART as string])
+  @Post('sell/print')
+  async sellPrintData(
     @Req() req: Request,
     @Res() res: Response,
+    @Query('search') search: Search,
     @Query('from') from: From,
     @Query('to') to: To,
-    @Query('search') search: Search,
     @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
+  ): Promise<
+    Response<{
+      sell: SellReportData[];
+      info: SellReportInfo;
+    }>
+  > {
     try {
-      let data = await this.reportService.sellPrint(
-        search,
-        from,
-        to,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
+      let data: {
+        sell: SellReportData[];
+        info: SellReportInfo;
+      } = await this.reportService.sellPrintData(search, from, to, userFilter);
+      return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .json({ error: error.message });
     }
   }
-
   //ITEM REPORT
 
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item')
   async getItem(
     @Req() req: Request,
@@ -231,10 +199,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item/information')
   async getItemInformation(
     @Req() req: Request,
@@ -261,10 +225,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item_search')
   async getItemSearch(
     @Req() req: Request,
@@ -282,10 +242,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item_search/information')
   async getItemInformationSearch(
     @Req() req: Request,
@@ -303,54 +259,9 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.SELL_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('item/print')
-  async itemPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('from') from: From,
-    @Query('filter') filter: Filter,
-    @Query('to') to: To,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.itemPrint(
-        filter,
-        search,
-        from,
-        to,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //KOGA ALL REPORT
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_all')
   async getKogaAll(
     @Req() req: Request,
@@ -372,10 +283,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_all/information')
   async getKogaAllInformation(
     @Req() req: Request,
@@ -393,12 +300,7 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-  //test
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_all_search')
   async getKogaAllSearch(
     @Req() req: Request,
@@ -416,10 +318,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_all_search/information')
   async getKogaAllInformationSearch(
     @Req() req: Request,
@@ -437,51 +335,9 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('koga_all/print')
-  async kogaAllPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('filter') filter: Filter,
-
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.kogaAllPrint(
-        search,
-        filter,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //KOGA NULL REPORT
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Null Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_null')
   async getKogaNull(
     @Req() req: Request,
@@ -503,10 +359,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Null Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_null/information')
   async getKogaNullInformation(
     @Req() req: Request,
@@ -526,10 +378,6 @@ export class ReportController {
   }
   //test
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Null Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_null_search')
   async getKogaNullSearch(
     @Req() req: Request,
@@ -547,10 +395,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Null Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_null_search/information')
   async getKogaNullInformationSearch(
     @Req() req: Request,
@@ -568,50 +412,9 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Null Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('koga_null/print')
-  async kogaNullPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('filter') filter: Filter,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.kogaNullPrint(
-        search,
-        filter,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //KOGA LESS REPORT
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get ess Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_less')
   async getKogaLess(
     @Req() req: Request,
@@ -633,10 +436,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Less Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_less/information')
   async getKogaLessInformation(
     @Req() req: Request,
@@ -656,10 +455,6 @@ export class ReportController {
   }
   //test
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Less Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_less_search')
   async getKogaLessSearch(
     @Req() req: Request,
@@ -677,10 +472,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Less Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_less_search/information')
   async getKogaLessInformationSearch(
     @Req() req: Request,
@@ -698,50 +489,9 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Less Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('koga_less/print')
-  async kogaLessPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('filter') filter: Filter,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.kogaLessPrint(
-        search,
-        filter,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //KOGA MOVEMENT REPORT
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Movement Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_movement')
   async getKogaMovement(
     @Req() req: Request,
@@ -773,10 +523,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Movement Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_movement/information')
   async getKogaMovementInformation(
     @Req() req: Request,
@@ -804,10 +550,6 @@ export class ReportController {
   }
   //test
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Movement Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_movement_search')
   async getKogaMovementSearch(
     @Req() req: Request,
@@ -826,10 +568,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Movement Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('koga_movement_search/information')
   async getKogaMovementInformationSearch(
     @Req() req: Request,
@@ -847,57 +585,8 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.KOGA_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get Movement Item' })
-  @ApiResponse({ status: 200, description: 'Item retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Item not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('koga_movement/print')
-  async kogaMovementPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('filter') filter: Filter,
-
-    @Query('from') from: From,
-    @Query('to') to: To,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.kogaMovementPrint(
-        search,
-        filter,
-        from,
-        to,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //BILL PROFIT REPORT
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All BillProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'BillProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('bill_profit')
   async getBillProfit(
     @Req() req: Request,
@@ -926,13 +615,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All BillProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'BillProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('bill_profit/information')
   async getBillProfitInformation(
     @Req() req: Request,
@@ -953,13 +635,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All BillProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'BillProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('bill_profit_search')
   async getBillProfitSearch(
     @Req() req: Request,
@@ -977,13 +652,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All BillProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'BillProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('bill_profit_search/information')
   async getBillProfitInformationSearch(
     @Req() req: Request,
@@ -1001,58 +669,9 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All BillProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'BillProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'BillProfit not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('bill_profit/print')
-  async BillProfitPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('from') from: From,
-    @Query('to') to: To,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.billProfitPrint(
-        search,
-        from,
-        to,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //ITEM_PROFIT
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All ItemProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item_profit')
   async getItemProfit(
     @Req() req: Request,
@@ -1083,13 +702,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All ItemProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item_profit/information')
   async getItemProfitInformation(
     @Req() req: Request,
@@ -1117,13 +729,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All ItemProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item_profit_search')
   async getItemProfitSearch(
     @Req() req: Request,
@@ -1142,13 +747,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All ItemProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('item_profit_search/information')
   async getItemProfitInformationSearch(
     @Req() req: Request,
@@ -1166,57 +764,9 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.PROFIT_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All ItemProfit' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemProfit retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemProfit not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('item_profit/print')
-  async itemProfitPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('from') from: From,
-    @Query('filter') filter: Filter,
-    @Query('to') to: To,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.itemProfitPrint(
-        filter,
-        search,
-        from,
-        to,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //EXPENSE REPORT
 
   @PartName([ENUMs.EXPENSE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Expense' })
-  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('expense')
   async getExpense(
     @Req() req: Request,
@@ -1247,10 +797,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.EXPENSE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Expense' })
-  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('expense/information')
   async getExpenseInformation(
     @Req() req: Request,
@@ -1278,10 +824,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.EXPENSE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Expense' })
-  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('expense_search')
   async getExpenseSearch(
     @Req() req: Request,
@@ -1299,10 +841,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.EXPENSE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Expense' })
-  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('expense_search/information')
   async getExpenseInformationSearch(
     @Req() req: Request,
@@ -1320,53 +858,8 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.EXPENSE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Expense' })
-  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('expense/print')
-  async expensePrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('from') from: From,
-    @Query('filter') filter: Filter,
-    @Query('to') to: To,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.expensePrint(
-        filter,
-        search,
-        from,
-        to,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //CASE REPORT
   @PartName([ENUMs.CASE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Case' })
-  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Case not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('case')
   async getCase(
     @Req() req: Request,
@@ -1389,10 +882,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.CASE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Case' })
-  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Case not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('case/information')
   async getCaseInformation(
     @Req() req: Request,
@@ -1416,10 +905,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.CASE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Case' })
-  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Case not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('case_search')
   async getCaseSearch(
     @Req() req: Request,
@@ -1437,10 +922,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.CASE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Case' })
-  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Case not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('case_search/information')
   async getCaseInformationSearch(
     @Req() req: Request,
@@ -1458,52 +939,9 @@ export class ReportController {
     }
   }
 
-  @PartName([ENUMs.CASE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Case' })
-  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Case not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('case/print')
-  async casePrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('from') from: From,
-    @Query('to') to: To,
-    @Query('search') search: Search,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.casePrint(
-        search,
-        from,
-        to,
-        req['user'].id,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
   //GLOBAL CASE DATA
 
   @PartName([ENUMs.CASE_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Case' })
-  @ApiResponse({ status: 200, description: 'Case retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Case not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('case/global')
   async getGlobalCaseInfo(
     @Req() req: Request,
@@ -1527,13 +965,6 @@ export class ReportController {
 
   //RESERVATION REPORT
   @PartName([ENUMs.RESERVATION_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Reservation' })
-  @ApiResponse({
-    status: 200,
-    description: 'Reservation retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Reservation not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('reservation')
   async getReservation(
     @Req() req: Request,
@@ -1570,13 +1001,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.RESERVATION_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Reservation' })
-  @ApiResponse({
-    status: 200,
-    description: 'Reservation retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Reservation not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('reservation/information')
   async getReservationInformation(
     @Req() req: Request,
@@ -1609,13 +1033,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.RESERVATION_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Reservation' })
-  @ApiResponse({
-    status: 200,
-    description: 'Reservation retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Reservation not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('reservation_search')
   async getReservationSearch(
     @Req() req: Request,
@@ -1634,13 +1051,6 @@ export class ReportController {
   }
 
   @PartName([ENUMs.RESERVATION_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Reservation' })
-  @ApiResponse({
-    status: 200,
-    description: 'Reservation retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Reservation not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('reservation_search/information')
   async getReservationInformationSearch(
     @Req() req: Request,
@@ -1651,56 +1061,6 @@ export class ReportController {
       let data: ReservationReportInfo =
         await this.reportService.getReservationInformationSearch(search);
       return res.status(HttpStatus.OK).json(data);
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
-  @PartName([ENUMs.RESERVATION_REPORT_PART as string])
-  @ApiOperation({ summary: 'Get All Reservation' })
-  @ApiResponse({
-    status: 200,
-    description: 'Reservation retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Reservation not found.' })
-  @HttpCode(HttpStatus.OK)
-  @Get('reservation/print')
-  async reservationPrint(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query('from') from: From,
-    @Query('to') to: To,
-    @Query('search') search: Search,
-    @Query('colorFilter') colorFilter: Filter,
-    @Query('carModelFilter') carModelFilter: Filter,
-    @Query('carTypeFilter') carTypeFilter: Filter,
-    @Query('serviceFilter') serviceFilter: Filter,
-    @Query('userFilter') userFilter: Filter,
-  ): Promise<Response<string | Uint8Array>> {
-    try {
-      let data = await this.reportService.reservationPrint(
-        search,
-        from,
-        to,
-        req['user'].id,
-        colorFilter,
-        carModelFilter,
-        carTypeFilter,
-        serviceFilter,
-        userFilter,
-      );
-      if (data.report_print_modal) {
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'attachment; filename="sell_report.pdf"',
-          'Content-Length': data.data.length,
-        });
-        res.end(data.data);
-      } else {
-        res.status(HttpStatus.OK).json({ data: data.data });
-      }
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

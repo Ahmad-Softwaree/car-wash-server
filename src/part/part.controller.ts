@@ -23,20 +23,14 @@ import { Id } from 'src/types/global';
 import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
 import { PartGuard } from 'src/auth/part.guard';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('part')
 @Controller('part')
 export class PartController {
   constructor(private readonly partService: PartService) {}
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Get All Parts' })
-  @ApiResponse({ status: 200, description: 'Parts retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Parts not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get()
   async getAll(
     @Req() req: Request,
@@ -53,10 +47,6 @@ export class PartController {
   }
 
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Add Part' })
-  @ApiResponse({ status: 200, description: 'Part Added successfully.' })
-  @ApiResponse({ status: 404, description: 'Part not found.' })
-  @HttpCode(HttpStatus.OK)
   @Post()
   @UsePipes(new ValidationPipe())
   async create(
@@ -75,11 +65,6 @@ export class PartController {
   }
 
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Update Part' })
-  @ApiParam({ name: 'id', description: 'Part ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Part Updated successfully.' })
-  @ApiResponse({ status: 404, description: 'Part not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -99,11 +84,6 @@ export class PartController {
   }
 
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Delete Part' })
-  @ApiParam({ name: 'id', description: 'Part ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Part Deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'Part not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

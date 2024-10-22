@@ -32,7 +32,6 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 
 import CreateServiceDto from './dto/create-service.dto';
@@ -40,18 +39,10 @@ import UpdateServiceDto from './dto/update-service.dto';
 import { Service } from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('service')
 @Controller('service')
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({ summary: 'Get All Services' })
-  @ApiResponse({
-    status: 200,
-    description: 'Services retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Services not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -72,13 +63,6 @@ export class ServiceController {
     }
   }
   @PartName(['all'])
-  @ApiOperation({ summary: 'Get Select Services' })
-  @ApiResponse({
-    status: 200,
-    description: 'Services retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Services not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/select')
   async getSelect(
     @Req() req: Request,
@@ -94,13 +78,6 @@ export class ServiceController {
     }
   }
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted Services' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted Services retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted Services not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -121,13 +98,6 @@ export class ServiceController {
     }
   }
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({ summary: 'Search Services' })
-  @ApiResponse({
-    status: 200,
-    description: 'Services retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Services not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -144,13 +114,6 @@ export class ServiceController {
     }
   }
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({ summary: 'Search Services' })
-  @ApiResponse({
-    status: 200,
-    description: 'Services retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Services not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -168,12 +131,6 @@ export class ServiceController {
   }
 
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({ summary: 'Add Service' })
-  @ApiResponse({
-    status: 200,
-    description: 'Service created successfully.',
-  })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -191,16 +148,6 @@ export class ServiceController {
     }
   }
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({
-    summary: 'Resotre Service By Id (deleted flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'Service ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Service deleted successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Service not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -217,14 +164,6 @@ export class ServiceController {
     }
   }
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({ summary: 'Update Service By Id' })
-  @ApiParam({ name: 'id', description: 'Service ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Service Updated successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Service not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -243,16 +182,6 @@ export class ServiceController {
     }
   }
   @PartName([ENUMs.SERVICES_PART as string])
-  @ApiOperation({
-    summary: 'Delete Service By Id (restore flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'Service ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Service restore successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Service not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

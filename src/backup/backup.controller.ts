@@ -11,7 +11,7 @@ import {
 import { BackupService } from './backup.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
 import { Request, Response } from 'express';
@@ -36,6 +36,7 @@ import {
   Item,
   ItemQuantityHistory,
   ItemType,
+  Printer,
   Reservation,
   Role,
   Sell,
@@ -43,18 +44,12 @@ import {
   Service,
   User,
 } from 'database/types';
-import { Printer } from 'pdf-to-printer';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('backup')
 @Controller('backup')
 export class BackupController {
   constructor(private readonly backupService: BackupService) {}
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/table_names')
   async getTableNames(
     @Req() req: Request,
@@ -70,10 +65,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/all_table')
   async getAll(
     @Req() req: Request,
@@ -95,10 +86,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/user')
   async backupUsers(
     @Req() req: Request,
@@ -120,13 +107,6 @@ export class BackupController {
   }
 
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Customers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Customers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Customers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/customer')
   async backupCustomers(
     @Req() req: Request,
@@ -149,13 +129,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Reservations' })
-  @ApiResponse({
-    status: 200,
-    description: 'Reservations retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Reservations not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/reservation')
   async backupReservations(
     @Req() req: Request,
@@ -178,10 +151,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Items' })
-  @ApiResponse({ status: 200, description: 'Items retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Items not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/item')
   async backupItems(
     @Req() req: Request,
@@ -202,10 +171,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Sells' })
-  @ApiResponse({ status: 200, description: 'Sells retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Sells not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/sell')
   async backupSells(
     @Req() req: Request,
@@ -226,13 +191,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All SellItems' })
-  @ApiResponse({
-    status: 200,
-    description: 'SellItems retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'SellItems not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/sell_item')
   async backupSellItems(
     @Req() req: Request,
@@ -255,10 +213,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Expenses' })
-  @ApiResponse({ status: 200, description: 'Expenses retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expenses not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/expense')
   async backupExpenses(
     @Req() req: Request,
@@ -281,10 +235,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Roles' })
-  @ApiResponse({ status: 200, description: 'Roles retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Roles not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/role')
   async backupRoles(
     @Req() req: Request,
@@ -305,10 +255,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Colors' })
-  @ApiResponse({ status: 200, description: 'Colors retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Colors not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/color')
   async backupColors(
     @Req() req: Request,
@@ -329,10 +275,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All CarTypes' })
-  @ApiResponse({ status: 200, description: 'CarTypes retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'CarTypes not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/car_type')
   async backupCarTypes(
     @Req() req: Request,
@@ -355,13 +297,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All CarModels' })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModels retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModels not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/car_model')
   async backupCarModels(
     @Req() req: Request,
@@ -384,13 +319,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All ExpenseTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'ExpenseTypes retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ExpenseTypes not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/expense_type')
   async backupExpenseTypes(
     @Req() req: Request,
@@ -413,13 +341,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All ItemTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemTypes retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemTypes not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/item_type')
   async backupItemTypes(
     @Req() req: Request,
@@ -442,10 +363,6 @@ export class BackupController {
     }
   }
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Services' })
-  @ApiResponse({ status: 200, description: 'Services retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Services not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/service')
   async backupServices(
     @Req() req: Request,
@@ -469,10 +386,6 @@ export class BackupController {
   }
 
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Printers' })
-  @ApiResponse({ status: 200, description: 'Printers retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Printers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/printer')
   async backupPrinters(
     @Req() req: Request,
@@ -496,13 +409,6 @@ export class BackupController {
   }
 
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All ItemQuantityHistories' })
-  @ApiResponse({
-    status: 200,
-    description: 'ItemQuantityHistories retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'ItemQuantityHistories not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/item_quantity_history')
   async backupItemQuantityHistories(
     @Req() req: Request,
@@ -525,10 +431,6 @@ export class BackupController {
   }
 
   @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @ApiOperation({ summary: 'Backup All Configs' })
-  @ApiResponse({ status: 200, description: 'Configs retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Configs not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/config')
   async backupConfigs(
     @Req() req: Request,

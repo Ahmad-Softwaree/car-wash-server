@@ -32,7 +32,6 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 
 import CreateCarModelDto from './dto/create-car-model.dto';
@@ -40,18 +39,10 @@ import UpdateCarModelDto from './dto/update-car-model.dto';
 import { CarModel } from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('car-model')
 @Controller('car-model')
 export class CarModelController {
   constructor(private readonly carModelService: CarModelService) {}
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({ summary: 'Get All CarModels' })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModels retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModels not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -72,13 +63,6 @@ export class CarModelController {
     }
   }
   @PartName(['all'])
-  @ApiOperation({ summary: 'Get Select CarModels' })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModels retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModels not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/select')
   async getSelect(
     @Req() req: Request,
@@ -94,13 +78,6 @@ export class CarModelController {
     }
   }
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted CarModels' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted CarModels retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted CarModels not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -121,13 +98,6 @@ export class CarModelController {
     }
   }
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({ summary: 'Search CarModels' })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModels retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModels not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -144,13 +114,6 @@ export class CarModelController {
     }
   }
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({ summary: 'Search CarModels' })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModels retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModels not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -169,12 +132,6 @@ export class CarModelController {
   }
 
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({ summary: 'Add CarModel' })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModel created successfully.',
-  })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -192,16 +149,6 @@ export class CarModelController {
     }
   }
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({
-    summary: 'Resotre CarModel By Id (deleted flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'CarModel ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModel deleted successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModel not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -218,14 +165,6 @@ export class CarModelController {
     }
   }
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({ summary: 'Update CarModel By Id' })
-  @ApiParam({ name: 'id', description: 'CarModel ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModel Updated successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModel not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -244,16 +183,6 @@ export class CarModelController {
     }
   }
   @PartName([ENUMs.CAR_MODELS_PART as string])
-  @ApiOperation({
-    summary: 'Delete CarModel By Id (restore flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'CarModel ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'CarModel restore successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'CarModel not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

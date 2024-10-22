@@ -31,7 +31,6 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 
 import CreateColorDto from './dto/create-color.dto';
@@ -39,18 +38,10 @@ import UpdateColorDto from './dto/update-color.dto';
 import { Color } from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('color')
 @Controller('color')
 export class ColorController {
   constructor(private readonly colorService: ColorService) {}
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({ summary: 'Get All Colors' })
-  @ApiResponse({
-    status: 200,
-    description: 'Colors retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Colors not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -71,13 +62,6 @@ export class ColorController {
     }
   }
   @PartName(['all'])
-  @ApiOperation({ summary: 'Get Select Colors' })
-  @ApiResponse({
-    status: 200,
-    description: 'Colors retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Colors not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/select')
   async getSelect(
     @Req() req: Request,
@@ -93,13 +77,6 @@ export class ColorController {
     }
   }
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted Colors' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted Colors retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted Colors not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -120,13 +97,6 @@ export class ColorController {
     }
   }
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({ summary: 'Search Colors' })
-  @ApiResponse({
-    status: 200,
-    description: 'Colors retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Colors not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -143,13 +113,6 @@ export class ColorController {
     }
   }
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({ summary: 'Search Colors' })
-  @ApiResponse({
-    status: 200,
-    description: 'Colors retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Colors not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -167,12 +130,6 @@ export class ColorController {
   }
 
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({ summary: 'Add Color' })
-  @ApiResponse({
-    status: 200,
-    description: 'Color created successfully.',
-  })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -190,16 +147,6 @@ export class ColorController {
     }
   }
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({
-    summary: 'Resotre Color By Id (deleted flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'Color ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Color deleted successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Color not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -216,14 +163,6 @@ export class ColorController {
     }
   }
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({ summary: 'Update Color By Id' })
-  @ApiParam({ name: 'id', description: 'Color ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Color Updated successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Color not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -242,16 +181,6 @@ export class ColorController {
     }
   }
   @PartName([ENUMs.COLORS_PART as string])
-  @ApiOperation({
-    summary: 'Delete Color By Id (restore flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'Color ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Color restore successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Color not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

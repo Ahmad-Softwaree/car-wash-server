@@ -20,18 +20,11 @@ import { AuthGuard } from './auth.guard';
 import { LoginQ, UserWithRoleAndPart } from 'src/types/auth';
 import { CurrentUserGuard } from './current-user.guard';
 import ChangeProfileDto from './dto/change-profile.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
-@ApiTags('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
-  @ApiOperation({ summary: 'Sign in' })
-  @ApiResponse({ status: 200, description: 'You Signed in successfully' })
-  @ApiResponse({ status: 404, description: 'User Not Found' })
   @Post('login')
   async signIn(
     @Body() body: SignInDto,
@@ -53,10 +46,6 @@ export class AuthController {
   }
 
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get Auth Data' })
-  @ApiResponse({ status: 200, description: 'Auth Data Get successfully' })
-  @ApiResponse({ status: 404, description: 'User Not Found' })
   @Get()
   async getAuth(
     @Req() req: Request,
@@ -73,12 +62,7 @@ export class AuthController {
         .json({ error: error.message });
     }
   }
-  @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard, CurrentUserGuard)
-  @UsePipes(new ValidationPipe())
-  @ApiOperation({ summary: 'Change Auth' })
-  @ApiResponse({ status: 200, description: 'Auth Changed successfully' })
-  @ApiResponse({ status: 404, description: 'User Not Found' })
   @Post('change_profile')
   async changeProfile(
     @Body() body: ChangeProfileDto,

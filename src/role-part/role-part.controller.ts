@@ -14,24 +14,15 @@ import { Request, Response } from 'express';
 import { RolePart } from 'database/types';
 import { RoleWithPartJoin } from 'src/types/role-part';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('role-part')
 @Controller('role-part')
 export class RolePartController {
   constructor(private readonly rolePartService: RolePartService) {}
   @PartName([ENUMs.USERS_PART as string, ENUMs.ROLES_PART as string])
-  @ApiOperation({ summary: 'Get Role Parts' })
-  @ApiResponse({
-    status: 200,
-    description: 'Role Parts retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Role Parts not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('role/:id')
   async getRoleParts(
     @Req() req: Request,

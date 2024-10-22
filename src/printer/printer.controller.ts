@@ -31,7 +31,6 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 
 import { Printer } from 'database/types';
@@ -39,18 +38,10 @@ import CreatePrinterDto from './dto/create-printer.dto';
 import UpdatePrinterDto from './dto/update-printer.dto';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('printer')
 @Controller('printer')
 export class PrinterController {
   constructor(private readonly printerService: PrinterService) {}
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({ summary: 'Get All Printers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Printers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -71,13 +62,6 @@ export class PrinterController {
     }
   }
   @PartName(['all'])
-  @ApiOperation({ summary: 'Get Select Printers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Printers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/select')
   async getSelect(
     @Req() req: Request,
@@ -93,13 +77,6 @@ export class PrinterController {
     }
   }
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted Printers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted Printers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted Printers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -119,14 +96,8 @@ export class PrinterController {
         .json({ error: error.message });
     }
   }
+
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({ summary: 'Search Printers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Printers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -142,14 +113,8 @@ export class PrinterController {
         .json({ error: error.message });
     }
   }
+
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({ summary: 'Search Printers' })
-  @ApiResponse({
-    status: 200,
-    description: 'Printers retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printers not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -167,12 +132,6 @@ export class PrinterController {
   }
 
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({ summary: 'Add Printer' })
-  @ApiResponse({
-    status: 200,
-    description: 'Printer created successfully.',
-  })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -190,16 +149,6 @@ export class PrinterController {
     }
   }
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({
-    summary: 'Resotre Printer By Id (deleted flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'Printer ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Printer deleted successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -216,14 +165,6 @@ export class PrinterController {
     }
   }
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({ summary: 'Update Printer By Id' })
-  @ApiParam({ name: 'id', description: 'Printer ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Printer Updated successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -242,14 +183,6 @@ export class PrinterController {
     }
   }
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({ summary: 'Update Printer By Id' })
-  @ApiParam({ name: 'id', description: 'Printer ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Printer Updated successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('state/:id')
   @UsePipes(new ValidationPipe())
   async updateState(
@@ -267,16 +200,6 @@ export class PrinterController {
     }
   }
   @PartName([ENUMs.PRINTER_PART as string])
-  @ApiOperation({
-    summary: 'Delete Printer By Id (restore flag in database)',
-  })
-  @ApiParam({ name: 'id', description: 'Printer ID', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Printer restore successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Printer not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

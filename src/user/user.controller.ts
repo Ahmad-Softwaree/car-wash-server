@@ -36,23 +36,14 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { User } from 'database/types';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('user')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @PartName(['all'])
-  @ApiOperation({ summary: 'Get Select Users' })
-  @ApiResponse({
-    status: 200,
-    description: 'Users retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/select')
   async getSelect(
     @Req() req: Request,
@@ -69,10 +60,6 @@ export class UserController {
   }
 
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Get All Users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -94,13 +81,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted Users' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted Users retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -122,10 +102,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Search Users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -142,10 +118,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Search Users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Users not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -163,11 +135,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Get User By Id' })
-  @ApiParam({ name: 'id', description: 'User ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'User retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'User not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get(':id')
   async getOne(
     @Req() req: Request,
@@ -184,9 +151,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Add User' })
-  @ApiResponse({ status: 200, description: 'User created successfully.' })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -204,11 +168,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Resotre User By Id (deleted flag in database)' })
-  @ApiParam({ name: 'id', description: 'User ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'User deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'User not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -225,11 +184,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Update User By Id' })
-  @ApiParam({ name: 'id', description: 'User ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'User Updated successfully.' })
-  @ApiResponse({ status: 404, description: 'User not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -248,11 +202,6 @@ export class UserController {
     }
   }
   @PartName([ENUMs.USERS_PART as string])
-  @ApiOperation({ summary: 'Delete User By Id (restore flag in database)' })
-  @ApiParam({ name: 'id', description: 'User ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'User restore successfully.' })
-  @ApiResponse({ status: 404, description: 'User not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

@@ -13,7 +13,6 @@ import { PartModule } from './part/part.module';
 
 import { KnexModule } from './knex/knex.module';
 import { UserPartModule } from './user-part/user-part.module';
-import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { RolePartModule } from './role-part/role-part.module';
 import { CarModelModule } from './car-model/car-model.module';
 import { CarTypeModule } from './car-type/car-type.module';
@@ -35,9 +34,6 @@ import { ConfigModule as MyConfigModule } from './config/config.module';
 
 @Module({
   imports: [
-    DevtoolsModule.register({
-      http: process.env.NODE_ENV != 'production',
-    }),
     KnexModule,
     JwtModule.register({
       global: true,

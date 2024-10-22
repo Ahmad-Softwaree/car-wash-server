@@ -32,22 +32,16 @@ import {
 import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ENUMs } from 'lib/enum';
 import { CreateExpenseDto } from './dto/create-expense-dto';
 import { UpdateExpenseDto } from './dto/update-expense-dto';
 import { ExpenseWithType } from 'src/types/expense';
 
 @UseGuards(AuthGuard, PartGuard)
-@ApiTags('expense')
 @Controller('expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Get All Expenses' })
-  @ApiResponse({ status: 200, description: 'Expenses retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expenses not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('')
   async getAll(
     @Req() req: Request,
@@ -78,13 +72,6 @@ export class ExpenseController {
     }
   }
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Get All Deleted Expenses' })
-  @ApiResponse({
-    status: 200,
-    description: 'Deleted Expenses retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'Deleted Expenses not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted')
   async getAllDeleted(
     @Req() req: Request,
@@ -116,10 +103,6 @@ export class ExpenseController {
   }
 
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Search Expenses' })
-  @ApiResponse({ status: 200, description: 'Expenses retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expenses not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/search')
   async search(
     @Req() req: Request,
@@ -136,10 +119,6 @@ export class ExpenseController {
     }
   }
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Search Expenses' })
-  @ApiResponse({ status: 200, description: 'Expenses retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expenses not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get('/deleted_search')
   async deletedSearch(
     @Req() req: Request,
@@ -158,11 +137,6 @@ export class ExpenseController {
   }
 
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Get Expense By Id' })
-  @ApiParam({ name: 'id', description: 'Expense ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Expense retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Get(':id')
   async getOne(
     @Req() req: Request,
@@ -179,9 +153,6 @@ export class ExpenseController {
     }
   }
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Add Expense' })
-  @ApiResponse({ status: 200, description: 'Expense created successfully.' })
-  @HttpCode(HttpStatus.OK)
   @Post('')
   @UsePipes(new ValidationPipe())
   async create(
@@ -202,11 +173,6 @@ export class ExpenseController {
     }
   }
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Resotre Expense By Id (deleted flag in database)' })
-  @ApiParam({ name: 'id', description: 'Expense ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Expense deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put('/restore/:id')
   async restore(
     @Param('id', ParseIntPipe) id: Id,
@@ -223,11 +189,6 @@ export class ExpenseController {
     }
   }
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Update Expense By Id' })
-  @ApiParam({ name: 'id', description: 'Expense ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Expense Updated successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Put(':id')
   @UsePipes(new ValidationPipe())
   async update(
@@ -250,11 +211,6 @@ export class ExpenseController {
     }
   }
   @PartName([ENUMs.EXPENSES_PART as string])
-  @ApiOperation({ summary: 'Delete Expense By Id (restore flag in database)' })
-  @ApiParam({ name: 'id', description: 'Expense ID', example: 1 })
-  @ApiResponse({ status: 200, description: 'Expense restore successfully.' })
-  @ApiResponse({ status: 404, description: 'Expense not found.' })
-  @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,
