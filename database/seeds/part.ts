@@ -75,10 +75,7 @@ export const parts = [
     name: 'ڕەنگەکان',
     created_at: new Date(),
   },
-  {
-    name: 'پرنتەرەکان',
-    created_at: new Date(),
-  },
+
   {
     name: 'جۆرەکانی ئۆتۆمبێل',
     created_at: new Date(),
@@ -105,10 +102,6 @@ export const parts = [
   },
   {
     name: 'باکئەپی ئاسایی',
-    created_at: new Date(),
-  },
-  {
-    name: 'باکئەپی سێرڤەر',
     created_at: new Date(),
   },
 ];
