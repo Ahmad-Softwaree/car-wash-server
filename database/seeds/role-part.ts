@@ -33,7 +33,7 @@ const seed = async function (knex: Knex) {
       created_at: new Date(),
     };
     adminParts.push(part);
-    superParts.push(part);
+    superParts.push(superPart);
 
     switch (val.name) {
       case 'کۆگا':

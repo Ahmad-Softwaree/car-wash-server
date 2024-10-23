@@ -14,14 +14,6 @@ export const roles = [
     name: 'ئەدمین',
     created_at: new Date(),
   },
-  {
-    name: 'محاسب',
-    created_at: new Date(),
-  },
-  {
-    name: 'کاشێر',
-    created_at: new Date(),
-  },
 ];
 
 const seed = async function (knex: Knex) {
