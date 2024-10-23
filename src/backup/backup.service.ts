@@ -12,7 +12,6 @@ import {
   Item,
   ItemQuantityHistory,
   ItemType,
-  Printer,
   Reservation,
   Role,
   Sell,
@@ -269,19 +268,6 @@ export class BackupService {
       const data: Service[] = await this.knex<Service>('service').select('*');
       await this.knex<Backup>('backup').insert({
         table: 'service',
-        user_id,
-      });
-      return data;
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  }
-
-  async backupPrinters(user_id: Id): Promise<Printer[]> {
-    try {
-      const data: Printer[] = await this.knex<Printer>('printer').select('*');
-      await this.knex<Backup>('backup').insert({
-        table: 'printer',
         user_id,
       });
       return data;

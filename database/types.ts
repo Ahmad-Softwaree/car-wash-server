@@ -111,14 +111,7 @@ export type Color = {
   updated_at: Date | null;
   deleted: boolean;
 };
-export type Printer = {
-  id: number;
-  name: string;
-  active: boolean;
-  created_at: Date | null;
-  updated_at: Date | null;
-  deleted: boolean;
-};
+
 export type CarType = {
   id: number;
   name: string;

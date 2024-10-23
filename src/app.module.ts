@@ -29,7 +29,6 @@ import { ReservationModule } from './reservation/reservation.module';
 import { BackupModule } from './backup/backup.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportModule } from './report/report.module';
-import { PrinterModule } from './printer/printer.module';
 import { ConfigModule as MyConfigModule } from './config/config.module';
 
 @Module({
@@ -72,7 +71,6 @@ import { ConfigModule as MyConfigModule } from './config/config.module';
     BackupModule,
     DashboardModule,
     ReportModule,
-    PrinterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

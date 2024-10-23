@@ -26,7 +26,6 @@ export type ENUM_TYPES =
   | 'CASE_REPORT_PART'
   | 'LESS_ITEM_PART'
   | 'EXPENSE_REPORT_PART'
-  | 'PRINTER_PART'
   | 'CONFIG_PART';
 
 export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
@@ -56,7 +55,6 @@ export const ENUMs: { [key in ENUM_TYPES]: key | string | number } = {
   PROFIT_REPORT_PART: 'ڕاپۆرتی قازانج',
   RESERVATION_REPORT_PART: 'ڕاپۆرتی نۆرەکان',
   EXPENSE_REPORT_PART: 'ڕاپۆرتی خەرجی',
-  PRINTER_PART: 'پرنتەرەکان',
   KOGA_REPORT_PART: 'ڕاپۆرتی کۆگا',
   CONFIG_PART: 'ڕێکخستن',
 };

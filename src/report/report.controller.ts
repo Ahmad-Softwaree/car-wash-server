@@ -34,17 +34,27 @@ import {
   SellItem,
 } from 'database/types';
 import {
+  BillProfitReportData,
   BillProfitReportInfo,
   CaseReport,
+  CaseReportData,
   CaseReportInfo,
+  ExpenseReportData,
   ExpenseReportInfo,
   GlobalCaseInfo,
+  ItemProfitReportData,
   ItemProfitReportInfo,
+  ItemReportData,
   ItemReportInfo,
+  KogaAllReportData,
   KogaAllReportInfo,
+  KogaLessReportData,
   KogaLessReportInfo,
+  KogaMovementReportData,
   KogaMovementReportInfo,
+  KogaNullReportData,
   KogaNullReportInfo,
+  ReservationReportData,
   ReservationReportInfo,
   SellReportData,
   SellReportInfo,
@@ -139,7 +149,7 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-  @PartName([ENUMs.CREATE_PSULA_PART as string, ENUMs.SELL_PART as string])
+  @PartName([ENUMs.SELL_REPORT_PART as string])
   @Post('sell/print')
   async sellPrintData(
     @Req() req: Request,
@@ -258,7 +268,40 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-
+  @PartName([ENUMs.SELL_REPORT_PART as string])
+  @Post('item/print')
+  async itemPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('from') from: From,
+    @Query('filter') filter: Filter,
+    @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      item: ItemReportData[];
+      info: ItemReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        item: ItemReportData[];
+        info: ItemReportInfo;
+      } = await this.reportService.itemPrintData(
+        filter,
+        search,
+        from,
+        to,
+        userFilter,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //KOGA ALL REPORT
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
@@ -334,7 +377,37 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @Post('koga_all/print')
+  async kogaAllPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      item: KogaAllReportData[];
+      info: KogaAllReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        item: KogaAllReportData[];
+        info: KogaAllReportInfo;
+      } = await this.reportService.kogaAllPrintData(
+        search,
+        filter,
 
+        userFilter,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //KOGA NULL REPORT
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
@@ -376,7 +449,6 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-  //test
   @PartName([ENUMs.KOGA_REPORT_PART as string])
   @Get('koga_null_search')
   async getKogaNullSearch(
@@ -411,7 +483,37 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @Post('koga_null/print')
+  async kogaNullPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      item: KogaNullReportData[];
+      info: KogaNullReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        item: KogaNullReportData[];
+        info: KogaNullReportInfo;
+      } = await this.reportService.kogaNullPrintData(
+        search,
+        filter,
 
+        userFilter,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //KOGA LESS REPORT
 
   @PartName([ENUMs.KOGA_REPORT_PART as string])
@@ -453,7 +555,7 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-  //test
+
   @PartName([ENUMs.KOGA_REPORT_PART as string])
   @Get('koga_less_search')
   async getKogaLessSearch(
@@ -481,6 +583,37 @@ export class ReportController {
     try {
       let data: KogaLessReportInfo =
         await this.reportService.getKogaLessInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @Post('koga_less/print')
+  async kogaLessPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('filter') filter: Filter,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      item: KogaLessReportData[];
+      info: KogaLessReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        item: KogaLessReportData[];
+        info: KogaLessReportInfo;
+      } = await this.reportService.kogaLessPrintData(
+        search,
+        filter,
+
+        userFilter,
+      );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res
@@ -548,7 +681,6 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-  //test
   @PartName([ENUMs.KOGA_REPORT_PART as string])
   @Get('koga_movement_search')
   async getKogaMovementSearch(
@@ -584,7 +716,40 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-
+  @PartName([ENUMs.KOGA_REPORT_PART as string])
+  @Post('koga_movement/print')
+  async kogaMovementPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('filter') filter: Filter,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      item: KogaMovementReportData[];
+      info: KogaMovementReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        item: KogaMovementReportData[];
+        info: KogaMovementReportInfo;
+      } = await this.reportService.kogaMovementPrintData(
+        filter,
+        search,
+        from,
+        to,
+        userFilter,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //BILL PROFIT REPORT
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
   @Get('bill_profit')
@@ -668,7 +833,38 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @Post('bill_profit/print')
+  async billProfitPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      sell: BillProfitReportData[];
+      info: BillProfitReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        sell: BillProfitReportData[];
+        info: BillProfitReportInfo;
+      } = await this.reportService.billProfitPrintData(
+        search,
+        from,
+        to,
+        userFilter,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //ITEM_PROFIT
 
   @PartName([ENUMs.PROFIT_REPORT_PART as string])
@@ -763,7 +959,40 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-
+  @PartName([ENUMs.PROFIT_REPORT_PART as string])
+  @Post('item_profit/print')
+  async itemProfitPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+    @Query('search') search: Search,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      item: ItemProfitReportData[];
+      info: ItemProfitReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        item: ItemProfitReportData[];
+        info: ItemProfitReportInfo;
+      } = await this.reportService.itemProfitPrintData(
+        filter,
+        search,
+        from,
+        to,
+        userFilter,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //EXPENSE REPORT
 
   @PartName([ENUMs.EXPENSE_REPORT_PART as string])
@@ -857,7 +1086,40 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-
+  @PartName([ENUMs.EXPENSE_REPORT_PART as string])
+  @Post('expense/print')
+  async expensePrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('filter') filter: Filter,
+    @Query('search') search: Search,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      info: ExpenseReportInfo;
+      expense: ExpenseReportData[];
+    }>
+  > {
+    try {
+      let data: {
+        info: ExpenseReportInfo;
+        expense: ExpenseReportData[];
+      } = await this.reportService.expensePrintData(
+        filter,
+        search,
+        from,
+        to,
+        userFilter,
+      );
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //CASE REPORT
   @PartName([ENUMs.CASE_REPORT_PART as string])
   @Get('case')
@@ -938,7 +1200,33 @@ export class ReportController {
         .json({ error: error.message });
     }
   }
-
+  @PartName([ENUMs.CASE_REPORT_PART as string])
+  @Post('case/print')
+  async casePrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      data: CaseReportData[];
+      info: CaseReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        data: CaseReportData[];
+        info: CaseReportInfo;
+      } = await this.reportService.casePrintData(search, from, to, userFilter);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   //GLOBAL CASE DATA
 
   @PartName([ENUMs.CASE_REPORT_PART as string])
@@ -1060,6 +1348,47 @@ export class ReportController {
     try {
       let data: ReservationReportInfo =
         await this.reportService.getReservationInformationSearch(search);
+      return res.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.RESERVATION_REPORT_PART as string])
+  @Post('reservation/print')
+  async reservationPrintData(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('search') search: Search,
+    @Query('from') from: From,
+    @Query('to') to: To,
+    @Query('colorFilter') colorFilter: Filter,
+    @Query('carModelFilter') carModelFilter: Filter,
+    @Query('carTypeFilter') carTypeFilter: Filter,
+    @Query('serviceFilter') serviceFilter: Filter,
+    @Query('userFilter') userFilter: Filter,
+  ): Promise<
+    Response<{
+      reservations: ReservationReportData[];
+      info: ReservationReportInfo;
+    }>
+  > {
+    try {
+      let data: {
+        reservations: ReservationReportData[];
+        info: ReservationReportInfo;
+      } = await this.reportService.reservationPrintData(
+        search,
+        from,
+        to,
+        colorFilter,
+        carModelFilter,
+        carTypeFilter,
+        serviceFilter,
+        userFilter,
+      );
       return res.status(HttpStatus.OK).json(data);
     } catch (error) {
       return res

@@ -36,7 +36,6 @@ import {
   Item,
   ItemQuantityHistory,
   ItemType,
-  Printer,
   Reservation,
   Role,
   Sell,
@@ -375,29 +374,6 @@ export class BackupController {
       res.setHeader(
         'Content-Disposition',
         'attachment; filename="services_backup.json"',
-      );
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(HttpStatus.OK).send(JSON.stringify(data, null, 2));
-    } catch (error) {
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-    }
-  }
-
-  @PartName([ENUMs.NORMAL_BACKUP_PART as string])
-  @Get('/printer')
-  async backupPrinters(
-    @Req() req: Request,
-    @Res() res: Response,
-  ): Promise<Response<Printer[]>> {
-    try {
-      let data: Printer[] = await this.backupService.backupPrinters(
-        req['user'].id,
-      );
-      res.setHeader(
-        'Content-Disposition',
-        'attachment; filename="printers_backup.json"',
       );
       res.setHeader('Content-Type', 'application/json');
       return res.status(HttpStatus.OK).send(JSON.stringify(data, null, 2));

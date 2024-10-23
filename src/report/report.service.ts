@@ -20,17 +20,27 @@ import {
   Filter,
 } from 'src/types/global';
 import {
+  BillProfitReportData,
   BillProfitReportInfo,
   CaseReport,
+  CaseReportData,
   CaseReportInfo,
+  ExpenseReportData,
   ExpenseReportInfo,
   GlobalCaseInfo,
+  ItemProfitReportData,
   ItemProfitReportInfo,
+  ItemReportData,
   ItemReportInfo,
+  KogaAllReportData,
   KogaAllReportInfo,
+  KogaLessReportData,
   KogaLessReportInfo,
+  KogaMovementReportData,
   KogaMovementReportInfo,
+  KogaNullReportData,
   KogaNullReportInfo,
+  ReservationReportData,
   ReservationReportInfo,
   SellReportData,
   SellReportInfo,
@@ -512,11 +522,11 @@ export class ReportService {
     to: To,
     userFilter: Filter,
   ): Promise<{
-    item: SellItem[];
+    item: ItemReportData[];
     info: ItemReportInfo;
   }> {
     try {
-      const item: SellItem[] = await this.knex<SellItem>('sell_item')
+      const item: ItemReportData[] = await this.knex<SellItem>('sell_item')
         .select(
           'sell_item.*',
           'item.name as item_name',
@@ -802,11 +812,11 @@ export class ReportService {
     filter: Filter,
     userFilter: Filter,
   ): Promise<{
-    item: Item[];
+    item: KogaAllReportData[];
     info: KogaAllReportInfo;
   }> {
     try {
-      const item: Item[] = await this.knex<Item>('item')
+      const item: KogaAllReportData[] = await this.knex<Item>('item')
         .select(
           'item.*',
           'item_type.id as type_id',
@@ -1104,11 +1114,11 @@ export class ReportService {
     filter: Filter,
     userFilter: Filter,
   ): Promise<{
-    item: Item[];
+    item: KogaNullReportData[];
     info: KogaNullReportInfo;
   }> {
     try {
-      const item: Item[] = await this.knex<Item>('item')
+      const item: KogaNullReportData[] = await this.knex<Item>('item')
         .select(
           'item.*',
           'item_type.id as type_id',
@@ -1415,7 +1425,7 @@ export class ReportService {
     filter: Filter,
     userFilter: Filter,
   ): Promise<{
-    item: Item[];
+    item: KogaLessReportData[];
     info: KogaLessReportInfo;
   }> {
     try {
@@ -1424,7 +1434,7 @@ export class ReportService {
       )
         .select('item_less_from')
         .first();
-      const item: Item[] = await this.knex<Item>('item')
+      const item: KogaLessReportData[] = await this.knex<Item>('item')
         .select(
           'item.*',
           'item_type.id as type_id',
@@ -1715,64 +1725,63 @@ export class ReportService {
     to: To,
     userFilter: Filter,
   ): Promise<{
-    item: ItemQuantityHistory[];
+    item: KogaMovementReportData[];
     info: KogaMovementReportInfo;
   }> {
     try {
-      const item: ItemQuantityHistory[] = await this.knex<ItemQuantityHistory>(
-        'item_quantity_history',
-      )
-        .select(
-          'item_quantity_history.*',
-          'item.barcode as item_barcode',
-          'item.id as item_id',
-          'item.name as item_name',
-          'user.username as created_by',
-          'item_type.id as type_id',
-          'item_type.name as type_name',
-        )
-        .leftJoin('user ', 'item_quantity_history.created_by', 'user.id')
-        .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
-        .leftJoin('item_type', 'item.type_id', 'item_type.id')
-        .where(function () {
-          this.where('item.deleted', false).orWhereNull('item.deleted');
-        })
+      const item: KogaMovementReportData[] =
+        await this.knex<ItemQuantityHistory>('item_quantity_history')
+          .select(
+            'item_quantity_history.*',
+            'item.barcode as item_barcode',
+            'item.id as item_id',
+            'item.name as item_name',
+            'user.username as created_by',
+            'item_type.id as type_id',
+            'item_type.name as type_name',
+          )
+          .leftJoin('user ', 'item_quantity_history.created_by', 'user.id')
+          .leftJoin('item', 'item_quantity_history.item_id', 'item.id')
+          .leftJoin('item_type', 'item.type_id', 'item_type.id')
+          .where(function () {
+            this.where('item.deleted', false).orWhereNull('item.deleted');
+          })
 
-        .andWhere(function () {
-          if (filter && filter != '') {
-            this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
-              `%${filter}%`,
-            ]);
-          }
-        })
-        .andWhere(function () {
-          if (userFilter && userFilter != '') {
-            this.where('user.id', userFilter);
-          }
-        })
-        .andWhere(function () {
-          if (from != '' && from && to != '' && to) {
-            const fromDate = timestampToDateString(Number(from));
-            const toDate = timestampToDateString(Number(to));
-            this.whereBetween('item_quantity_history.created_at', [
-              fromDate,
-              toDate,
-            ]);
-          }
-        })
-        .andWhere(function () {
-          if (search && search !== '') {
-            this.where('user.username', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(item_quantity_history.id AS TEXT) ILIKE ?', [
-                `%${search}%`,
-              ])
-              .orWhere('item.barcode', 'ilike', `%${search}%`)
-              .orWhere('item.name', 'ilike', `%${search}%`)
-              .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
-          }
-        })
+          .andWhere(function () {
+            if (filter && filter != '') {
+              this.whereRaw('CAST(item_type.id AS TEXT) ILIKE ?', [
+                `%${filter}%`,
+              ]);
+            }
+          })
+          .andWhere(function () {
+            if (userFilter && userFilter != '') {
+              this.where('user.id', userFilter);
+            }
+          })
+          .andWhere(function () {
+            if (from != '' && from && to != '' && to) {
+              const fromDate = timestampToDateString(Number(from));
+              const toDate = timestampToDateString(Number(to));
+              this.whereBetween('item_quantity_history.created_at', [
+                fromDate,
+                toDate,
+              ]);
+            }
+          })
+          .andWhere(function () {
+            if (search && search !== '') {
+              this.where('user.username', 'ilike', `%${search}%`)
+                .orWhereRaw('CAST(item_quantity_history.id AS TEXT) ILIKE ?', [
+                  `%${search}%`,
+                ])
+                .orWhere('item.barcode', 'ilike', `%${search}%`)
+                .orWhere('item.name', 'ilike', `%${search}%`)
+                .orWhereRaw('CAST(item.id AS TEXT) ILIKE ?', [`%${search}%`]);
+            }
+          })
 
-        .orderBy('item_quantity_history.id', 'desc');
+          .orderBy('item_quantity_history.id', 'desc');
 
       let info = !search
         ? await this.getKogaMovementInformation(filter, from, to, userFilter)
@@ -1978,11 +1987,11 @@ export class ReportService {
     to: To,
     userFilter: Filter,
   ): Promise<{
-    sell: Sell[];
+    sell: BillProfitReportData[];
     info: BillProfitReportInfo;
   }> {
     try {
-      const sell: Sell[] = await this.knex<Sell>('sell')
+      const sell: BillProfitReportData[] = await this.knex<Sell>('sell')
         .select(
           'sell.*',
           'createdUser.username as created_by',
@@ -2295,11 +2304,13 @@ export class ReportService {
     to: To,
     userFilter: Filter,
   ): Promise<{
-    item: SellItem[];
+    item: ItemProfitReportData[];
     info: ItemProfitReportInfo;
   }> {
     try {
-      const item: SellItem[] = await this.knex<SellItem>('sell_item')
+      const item: ItemProfitReportData[] = await this.knex<SellItem>(
+        'sell_item',
+      )
         .select(
           'sell_item.*',
           'item.name as item_name',
@@ -2550,10 +2561,10 @@ export class ReportService {
     userFilter: Filter,
   ): Promise<{
     info: ExpenseReportInfo;
-    expense: Expense[];
+    expense: ExpenseReportData[];
   }> {
     try {
-      const expense: Expense[] = await this.knex<Expense>('expense')
+      const expense: ExpenseReportData[] = await this.knex<Expense>('expense')
         .select(
           'expense.*',
           'expense_type.id as type_id',
@@ -2783,11 +2794,11 @@ export class ReportService {
     to: To,
     userFilter: Filter,
   ): Promise<{
-    sell: CaseReport[];
+    data: CaseReportData[];
     info: CaseReportInfo;
   }> {
     try {
-      const sell: CaseReport[] = await this.knex<SellItem>('sell_item')
+      const data: CaseReportData[] = await this.knex<SellItem>('sell_item')
         .select(
           'user.username as created_by',
           'user.id as user_id',
@@ -2828,7 +2839,7 @@ export class ReportService {
         ? await this.getCaseInformation(from, to, userFilter)
         : await this.getCaseInformationSearch(search);
 
-      return { sell, info };
+      return { data, info };
     } catch (error) {
       throw new Error(error.message);
     }
@@ -3150,11 +3161,13 @@ export class ReportService {
     serviceFilter: Filter,
     userFilter: Filter,
   ): Promise<{
-    sell: Reservation[];
+    reservations: ReservationReportData[];
     info: ReservationReportInfo;
   }> {
     try {
-      const sell: Reservation[] = await this.knex<Reservation>('reservation')
+      const reservations: ReservationReportData[] = await this.knex<Reservation>(
+        'reservation',
+      )
         .select(
           'reservation.*',
           'car_model.name as car_model_name',
@@ -3244,7 +3257,7 @@ export class ReportService {
           )
         : await this.getReservationInformationSearch(search);
 
-      return { sell, info };
+      return { reservations, info };
     } catch (error) {
       throw new Error(error.message);
     }

@@ -336,14 +336,7 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
 
       table.timestamps({ defaultToNow: true });
     })
-    .createTable('printer', function (table) {
-      table.increments('id').primary();
 
-      table.string('name', 255).notNullable();
-      table.boolean('active').defaultTo(false);
-      table.boolean('deleted').defaultTo(false);
-      table.timestamps({ defaultToNow: true });
-    })
     .createTable('config', (table) => {
       table.increments('id').primary();
       table.integer('item_less_from').defaultTo(15);

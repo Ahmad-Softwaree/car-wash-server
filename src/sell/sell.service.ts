@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { Item, Printer, Sell, SellItem } from 'database/types';
+import { Item, Sell, SellItem } from 'database/types';
 import { Knex } from 'knex';
 import {
   Filter,
@@ -376,14 +376,6 @@ export class SellService {
     sellItems: SellItem[];
   }> {
     try {
-      let activePrinter = await this.knex<Printer>('printer')
-        .where('active', true)
-        .first();
-
-      if (!activePrinter) {
-        throw new BadRequestException('تکایە لە ڕێکخستن پرینتەرێک چالاک بکە');
-      }
-
       let sell: Sell = await this.findOne(sell_id);
 
       const sellItems: SellItem[] = await this.knex<SellItem>('sell_item')

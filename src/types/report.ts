@@ -27,8 +27,8 @@ export type GlobalCaseInfo = {
 };
 
 export type CaseReportData = CaseReport & {
-  total_quantity: number;
-  total_sell_price: number;
+  sold_price: number;
+  sold: number;
 };
 
 export type SellReportInfo = {
