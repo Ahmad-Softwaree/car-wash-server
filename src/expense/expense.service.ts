@@ -14,8 +14,8 @@ import {
   To,
 } from 'src/types/global';
 import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
-import { CreateExpenseDto } from './dto/create-expense-dto';
-import { UpdateExpenseDto } from './dto/update-expense-dto';
+import { CreateExpenseDto } from './dto/create-expense.dto';
+import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { ExpenseWithType } from 'src/types/expense';
 import { Expense } from 'database/types';
 

@@ -17,11 +17,11 @@ import {
   To,
 } from 'src/types/global';
 import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
-import { CreateItemDto } from './dto/create-item-dto';
-import { UpdateItemDto } from './dto/update-item-dto';
+import { CreateItemDto } from './dto/create-item.dto';
+import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemWithType } from 'src/types/item';
 import { Config, Item, ItemQuantityHistory, SellItem } from 'database/types';
-import { ChangeItemQuantityDto } from './dto/change-item-quantity-dto';
+import { ChangeItemQuantityDto } from './dto/change-item-quantity.dto';
 
 @Injectable()
 export class ItemService {

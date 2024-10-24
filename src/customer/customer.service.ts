@@ -20,8 +20,8 @@ import {
   To,
 } from 'src/types/global';
 import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
-import CreateCustomerDto from './dto/create-customer-dto';
-import UpdateCustomerDto from './dto/update-customer-dto';
+import CreateCustomerDto from './dto/create-customer.dto';
+import UpdateCustomerDto from './dto/update-customer.dto';
 import { ENUMs } from 'lib/enum';
 
 @Injectable()
@@ -264,6 +264,12 @@ export class CustomerService {
     user_id: number,
   ): Promise<Customer> {
     try {
+      let customer = await this.knex<Customer>('customer')
+        .where('id', id)
+        .first();
+      if (customer.name == 'نەقد' || customer.id == 1) {
+        throw new BadRequestException(`ناتوانی یوزەری نەقد دەسکاری بکەیت`);
+      }
       const result: Customer[] = await this.knex<Customer>('customer')
         .where('id', id)
         .update({ created_by: user_id, ...data })

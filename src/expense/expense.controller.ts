@@ -33,8 +33,8 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
-import { CreateExpenseDto } from './dto/create-expense-dto';
-import { UpdateExpenseDto } from './dto/update-expense-dto';
+import { CreateExpenseDto } from './dto/create-expense.dto';
+import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { ExpenseWithType } from 'src/types/expense';
 
 @UseGuards(AuthGuard, PartGuard)

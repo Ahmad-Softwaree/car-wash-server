@@ -31,13 +31,13 @@ import {
   Search,
   To,
 } from 'src/types/global';
-import { CreateItemDto } from './dto/create-item-dto';
-import { UpdateItemDto } from './dto/update-item-dto';
+import { CreateItemDto } from './dto/create-item.dto';
+import { UpdateItemDto } from './dto/update-item.dto';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
 import { ItemWithType } from 'src/types/item';
 import { ENUMs } from 'lib/enum';
-import { ChangeItemQuantityDto } from './dto/change-item-quantity-dto';
+import { ChangeItemQuantityDto } from './dto/change-item-quantity.dto';
 import { Item } from 'database/types';
 
 @UseGuards(AuthGuard, PartGuard)

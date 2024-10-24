@@ -34,8 +34,8 @@ import { Customer } from 'database/types';
 import { PartGuard } from 'src/auth/part.guard';
 import { PartName } from 'src/auth/part.decorator';
 import { ENUMs } from 'lib/enum';
-import CreateCustomerDto from './dto/create-customer-dto';
-import UpdateCustomerDto from './dto/update-customer-dto';
+import CreateCustomerDto from './dto/create-customer.dto';
+import UpdateCustomerDto from './dto/update-customer.dto';
 
 @UseGuards(AuthGuard, PartGuard)
 @Controller('customer')
