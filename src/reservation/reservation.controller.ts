@@ -207,16 +207,22 @@ export class ReservationController {
   }
 
   @PartName([ENUMs.RESERVATION_PART as string])
-  @Post('mobile')
+  @Post('mobile/service_id')
   @UsePipes(new ValidationPipe())
   async createMobile(
+    @Param('service_id', ParseIntPipe) service_id: Id,
+
     @Body() body: CreateReservationMobileDto,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<Response<Reservation>> {
     try {
       const reservation: Reservation =
-        await this.reservationService.createMobile(body, req['user'].id);
+        await this.reservationService.createMobile(
+          service_id,
+          body,
+          req['user'].id,
+        );
       return res.status(HttpStatus.OK).json(reservation);
     } catch (error) {
       return res
@@ -224,6 +230,7 @@ export class ReservationController {
         .json({ error: error.message });
     }
   }
+
   @PartName([ENUMs.RESERVATION_PART as string])
   @Put('/restore/:id')
   async restore(

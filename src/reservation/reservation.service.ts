@@ -499,6 +499,7 @@ export class ReservationService {
     }
   }
   async createMobile(
+    service_id: number,
     data: CreateReservationMobileDto,
     user_id: number,
   ): Promise<Reservation> {
@@ -521,6 +522,7 @@ export class ReservationService {
           completed: true,
           customer_id: customer.id,
           date_time: getCurrentDateTime(),
+          service_id,
           ...data,
         })
         .returning('*');
