@@ -207,7 +207,7 @@ export class ReservationController {
   }
 
   @PartName([ENUMs.RESERVATION_PART as string])
-  @Post('mobile/service_id')
+  @Post('mobile/:service_id')
   @UsePipes(new ValidationPipe())
   async createMobile(
     @Param('service_id', ParseIntPipe) service_id: Id,
