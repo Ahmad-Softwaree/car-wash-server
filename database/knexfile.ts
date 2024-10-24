@@ -1,8 +1,7 @@
-import { Knex } from 'knex';
 import { config as loadEnv } from 'dotenv';
 import * as path from 'path';
 loadEnv({ path: path.resolve(__dirname, '../.env') });
-const development: Knex.Config = {
+module.exports = {
   client: 'pg',
   connection: {
     host: process.env.DATABASE_HOST,
@@ -18,5 +17,3 @@ const development: Knex.Config = {
     directory: './migrations',
   },
 };
-
-export { development };
