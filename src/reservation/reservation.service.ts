@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Reservation } from 'database/types';
+import { Customer, Reservation, Service } from 'database/types';
 import { Knex } from 'knex';
 import {
   Filter,
@@ -20,6 +20,7 @@ import { PanelReservation } from 'src/types/reservation';
 import UpdateReservationDto from './dto/update-reservation.dto';
 import CreateReservationDto from './dto/create-reservation.dto';
 import { generatePaginationInfo, timestampToDateString } from 'lib/functions';
+import CreateReservationMobileDto from './dto/create-reservation-mobile.dto';
 
 @Injectable()
 export class ReservationService {
@@ -491,6 +492,37 @@ export class ReservationService {
         'reservation',
       )
         .insert({ created_by: user_id, ...data })
+        .returning('*');
+      return reservation[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+  async createMobile(
+    data: CreateReservationMobileDto,
+    user_id: number,
+  ): Promise<Reservation> {
+    const getCurrentDateTime = () => {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      const localTime = new Date(now.getTime() - offset);
+      return localTime.toISOString().slice(0, 16);
+    };
+
+    const customer: Customer = await this.knex<Customer>('customer')
+      .where('name', 'نەقد')
+      .first();
+    try {
+      const reservation: Reservation[] = await this.knex<Reservation>(
+        'reservation',
+      )
+        .insert({
+          created_by: user_id,
+          completed: true,
+          customer_id: customer.id,
+          date_time: getCurrentDateTime(),
+          ...data,
+        })
         .returning('*');
       return reservation[0];
     } catch (error) {

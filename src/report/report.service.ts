@@ -2971,7 +2971,7 @@ export class ReportService {
             );
           }
         })
-
+        .andWhere('reservation.completed', true)
         .orderBy('id', 'desc')
         .offset((page - 1) * limit)
         .limit(limit);
@@ -3060,6 +3060,8 @@ export class ReportService {
             );
           }
         })
+        .andWhere('reservation.completed', true)
+
         .andWhere('reservation.deleted', false);
 
       return reservation[0];
@@ -3107,6 +3109,8 @@ export class ReportService {
             .orWhere('car_model.name', 'ilike', `%${search}%`)
             .orWhere('car_type.name', 'ilike', `%${search}%`);
         })
+        .andWhere('reservation.completed', true)
+
         .orderBy('id', 'desc');
 
       return sell;
@@ -3149,6 +3153,8 @@ export class ReportService {
               ]);
           }
         })
+        .andWhere('reservation.completed', true)
+
         .andWhere('reservation.deleted', false);
 
       return reservation[0]; // Return the aggregated data
@@ -3249,6 +3255,8 @@ export class ReportService {
               );
             }
           })
+          .andWhere('reservation.completed', true)
+
           .orderBy('id', 'desc');
 
       let info = !search

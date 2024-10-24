@@ -36,6 +36,7 @@ import {
 } from 'src/types/global';
 import CreateReservationDto from './dto/create-reservation.dto';
 import UpdateReservationDto from './dto/update-reservation.dto';
+import CreateReservationMobileDto from './dto/create-reservation-mobile.dto';
 
 @UseGuards(AuthGuard, PartGuard)
 @Controller('reservation')
@@ -197,6 +198,25 @@ export class ReservationController {
         body,
         req['user'].id,
       );
+      return res.status(HttpStatus.OK).json(reservation);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+
+  @PartName([ENUMs.RESERVATION_PART as string])
+  @Post('mobile')
+  @UsePipes(new ValidationPipe())
+  async createMobile(
+    @Body() body: CreateReservationMobileDto,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<Response<Reservation>> {
+    try {
+      const reservation: Reservation =
+        await this.reservationService.createMobile(body, req['user'].id);
       return res.status(HttpStatus.OK).json(reservation);
     } catch (error) {
       return res
