@@ -9,8 +9,7 @@ import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { UserService } from '../user/user.service';
 import { Part } from 'database/types';
-import { configDotenv } from 'dotenv';
-configDotenv();
+
 @Injectable()
 export class PartGuard implements CanActivate {
   constructor(

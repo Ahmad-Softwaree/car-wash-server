@@ -8,18 +8,12 @@ import {
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import {
-  JWTPayload,
-  LoginQ,
-  UserWithRole,
-  UserWithRoleAndPart,
-} from 'src/types/auth';
+import { JWTPayload, LoginQ, UserWithRoleAndPart } from 'src/types/auth';
 import { User } from 'database/types';
 import { Knex } from 'knex';
 import ChangeProfileDto from './dto/change-profile.dto';
 import { Id } from 'src/types/global';
-import { configDotenv } from 'dotenv';
-configDotenv();
+
 @Injectable()
 export class AuthService {
   constructor(

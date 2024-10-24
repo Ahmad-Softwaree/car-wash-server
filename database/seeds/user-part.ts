@@ -6,10 +6,7 @@
 import { Knex } from 'knex';
 
 const seed = async function (knex: Knex) {
-  let user = await knex
-    .table('user')
-    .where({ username: 'ahmadSoftware' })
-    .first();
+  let user = await knex.table('user').where({ username: 'admin' }).first();
 
   let parts = await knex.table('part');
   let insertParts = [];

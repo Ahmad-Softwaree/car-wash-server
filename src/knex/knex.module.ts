@@ -1,8 +1,7 @@
 // knex.module.ts
 import { Module, Global } from '@nestjs/common';
 import Knex from 'knex';
-import { configDotenv } from 'dotenv';
-configDotenv();
+
 @Global()
 @Module({
   providers: [
@@ -12,7 +11,7 @@ configDotenv();
         return Knex({
           client: 'pg',
           connection: {
-            host: 'localhost',
+            host: process.env.DATABASE_HOST,
             port: Number(process.env.DATABASE_PORT),
             user: process.env.DATABASE_USER,
             password: process.env.DATABASE_PASSWORD,

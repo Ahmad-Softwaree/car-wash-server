@@ -32,7 +32,7 @@
     "seed:item_history": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=item_history.ts",
     "seed:item": "npx knex seed:run --knexfile ./database/knexfile.ts --specific=item.ts",
     "seed:all": "npm run delete-tables && npm run seed:role && npm run seed:part && npm run seed:role-part && npm run seed:user && npm run seed:user-part && npm run seed:car_model && npm run seed:car_type && npm run seed:item_type && npm run seed:color && npm run seed:expense_type && npm run seed:customer && npm run seed:expense && npm run seed:service && npm run seed:item && npm run seed:reservation && npm run seed:item_history && npm run seed:config",
-    "seed:all_server": "npm run delete-tables && npm run seed:role && npm run seed:part && npm run seed:role-part && npm run seed:user && npm run seed:user-part && npm run seed:config"
+    "seed:all_server": "npm run delete-tables && npm run seed:role && npm run seed:part && npm run seed:role-part && npm run seed:user && npm run seed:user-part && npm run seed:config && npm run seed:customer"
   },
   "dependencies": {
     "@faker-js/faker": "^9.0.0",

@@ -99,6 +99,7 @@ export type RolePart = {
 export type Service = {
   id: number;
   name: string;
+  price: number;
   created_at: Date | null;
   updated_at: Date | null;
   deleted: boolean;
@@ -205,6 +206,7 @@ export type SellItem = {
 export type Reservation = {
   id: number;
   customer_id: number;
+  car_number: string;
   color_id: number;
   service_id: number;
   car_model_id: number;
@@ -222,8 +224,7 @@ export type Reservation = {
 
 export type Customer = {
   id: number;
-  first_name: string;
-  last_name: string;
+  name: string;
   phone: string;
   created_at: Date | null;
   updated_at: Date | null;

@@ -40,7 +40,11 @@ import { ConfigModule as MyConfigModule } from './config/config.module';
       signOptions: { expiresIn: '1d' },
     }),
 
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      expandVariables: true,
+    }),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

@@ -63,7 +63,7 @@ export class ReservationService {
   )
   SELECT r.id AS id,
          r.date_time AS date_time,
-         c.first_name AS customer_name,
+         c.name AS customer_name,
          dc.total_reservations, -- Total reservations per day
          dc.completed_reservations, -- Completed reservations per day
          dc.not_completed_reservations -- Not completed reservations per day
@@ -115,8 +115,7 @@ export class ReservationService {
           'car_type.name as car_type_name',
           'color.name as color_name',
           'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
@@ -233,8 +232,7 @@ export class ReservationService {
           'car_type.name as car_type_name',
           'color.name as color_name',
           'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
@@ -335,8 +333,7 @@ export class ReservationService {
           'car_type.name as car_type_name',
           'color.name as color_name',
           'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
@@ -391,8 +388,7 @@ export class ReservationService {
           'car_type.name as car_type_name',
           'color.name as color_name',
           'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
@@ -413,11 +409,12 @@ export class ReservationService {
         ) // Join for updated_by
         .where(function () {
           this.whereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [`%${search}%`])
-            .orWhere('customer.first_name', 'ilike', `%${search}%`)
-            .orWhere('customer.last_name', 'ilike', `%${search}%`)
+            .orWhere('customer.name', 'ilike', `%${search}%`)
             .orWhere('service.name', 'ilike', `%${search}%`)
             .orWhere('color.name', 'ilike', `%${search}%`)
             .orWhere('car_model.name', 'ilike', `%${search}%`)
+            .orWhere('reservation.car_number', 'ilike', `%${search}%`)
+
             .orWhere('car_type.name', 'ilike', `%${search}%`);
         })
         .andWhere(function () {
@@ -447,8 +444,7 @@ export class ReservationService {
           'car_type.name as car_type_name',
           'color.name as color_name',
           'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
@@ -469,11 +465,12 @@ export class ReservationService {
         ) // Join for updated_by
         .where(function () {
           this.whereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [`%${search}%`])
-            .orWhere('customer.first_name', 'ilike', `%${search}%`)
-            .orWhere('customer.last_name', 'ilike', `%${search}%`)
+            .orWhere('customer.name', 'ilike', `%${search}%`)
             .orWhere('service.name', 'ilike', `%${search}%`)
             .orWhere('color.name', 'ilike', `%${search}%`)
             .orWhere('car_model.name', 'ilike', `%${search}%`)
+            .orWhere('reservation.car_number', 'ilike', `%${search}%`)
+
             .orWhere('car_type.name', 'ilike', `%${search}%`);
         })
         .andWhere('reservation.deleted', true)

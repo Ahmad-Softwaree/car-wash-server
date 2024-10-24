@@ -12,9 +12,9 @@ const generatePasswordHash = async (password: string): Promise<string> => {
 
 let users = [
   {
-    name: 'Ahmad Software',
-    username: 'ahmadSoftware',
-    password: 'aghlqtyo',
+    name: 'admin',
+    username: 'admin',
+    password: 'admin',
     phone: '07701993085',
     role_id: 1,
     created_at: new Date(),

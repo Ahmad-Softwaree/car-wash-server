@@ -139,8 +139,7 @@ export type ReservationReportInfo = {
 
 export type ReservationReportData = Reservation & {
   total_sell_price: number;
-  customer_first_name: string;
-  customer_last_name: string;
+  customer_name: string;
   color_name: string;
   car_type_name: string;
   car_model_name: string;

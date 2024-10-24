@@ -10,8 +10,7 @@ import { User } from 'database/types';
 import { Request } from 'express';
 import { Knex } from 'knex';
 import { JWTPayload } from 'src/types/auth';
-import { configDotenv } from 'dotenv';
-configDotenv();
+
 @Injectable()
 export class CurrentUserGuard implements CanActivate {
   constructor(

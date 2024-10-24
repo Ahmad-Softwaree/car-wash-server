@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   forwardRef,
   Inject,
   Injectable,
@@ -85,7 +86,7 @@ export class CustomerService {
       const customers: Customer[] = await this.knex
         .table<Customer>('customer')
         .where('deleted', false)
-        .select('id', 'first_name', 'last_name');
+        .select('id', 'name');
 
       return customers;
     } catch (error) {
@@ -187,9 +188,11 @@ export class CustomerService {
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
         .where(function () {
-          this.where('customer.first_name', 'ilike', `%${search}%`)
-            .orWhere('customer.phone', 'ilike', `%${search}%`)
-            .orWhere('customer.last_name', 'ilike', `%${search}%`);
+          this.where('customer.name', 'ilike', `%${search}%`).orWhere(
+            'customer.phone',
+            'ilike',
+            `%${search}%`,
+          );
         })
         .leftJoin(
           'user as createdUser',
@@ -218,9 +221,11 @@ export class CustomerService {
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
         .where(function () {
-          this.where('customer.first_name', 'ilike', `%${search}%`)
-            .orWhere('customer.phone', 'ilike', `%${search}%`)
-            .orWhere('customer.last_name', 'ilike', `%${search}%`);
+          this.where('customer.name', 'ilike', `%${search}%`).orWhere(
+            'customer.phone',
+            'ilike',
+            `%${search}%`,
+          );
         })
         .leftJoin(
           'user as createdUser',
@@ -276,6 +281,12 @@ export class CustomerService {
 
   async delete(id: Id): Promise<Id> {
     try {
+      let customer = await this.knex<Customer>('customer')
+        .where('id', id)
+        .first();
+      if (customer.name == 'نەقد' || customer.id == 1) {
+        throw new BadRequestException(`ناتوانی یوزەری نەقد بسڕیتەوە`);
+      }
       await this.knex<Customer>('customer')
         .where('id', id)
         .update({ deleted: true });

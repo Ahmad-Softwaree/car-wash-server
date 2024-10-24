@@ -169,6 +169,7 @@ export class ServiceService {
       const service: Service[] = await this.knex<Service>('service')
         .insert({
           name: data.name,
+          price: data.price,
         })
         .returning('*');
 
@@ -185,6 +186,7 @@ export class ServiceService {
         .where({ id })
         .update({
           name: data.name,
+          price: data.price,
         })
         .returning('*');
 

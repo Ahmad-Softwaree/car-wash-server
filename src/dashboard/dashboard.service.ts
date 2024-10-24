@@ -71,8 +71,7 @@ export class DashboardService {
           'reservation.customer_id',
           'reservation.date_time',
           'reservation.completed',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
         )
         .where('reservation.deleted', false)
         .leftJoin('customer', 'reservation.customer_id', 'customer.id')

@@ -7,6 +7,7 @@ import { Knex } from 'knex';
 
 const services = Array.from({ length: 10 }, () => ({
   name: faker.company.name(), // Better suited for a service name
+  price: 1000,
   created_at: new Date(),
   updated_at: new Date(),
 }));

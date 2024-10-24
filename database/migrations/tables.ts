@@ -72,6 +72,7 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
     .createTable('service', function (table) {
       table.increments('id').primary();
       table.string('name').notNullable().unique();
+      table.float('price').notNullable().defaultTo(0);
       table.boolean('deleted').defaultTo(false);
       table.timestamps({ defaultToNow: true });
     })
@@ -245,8 +246,7 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
     })
     .createTable('customer', function (table) {
       table.increments('id').primary();
-      table.string('first_name', 255).notNullable();
-      table.string('last_name', 255).notNullable();
+      table.string('name', 255).notNullable();
       table.integer('created_by').unsigned().notNullable();
       table.integer('updated_by').unsigned();
 
@@ -289,7 +289,7 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
         .inTable('customer')
         .onDelete('RESTRICT');
 
-      table.integer('color_id').unsigned().notNullable();
+      table.integer('color_id').unsigned();
       table
         .foreign('color_id')
         .references('id')
@@ -303,20 +303,22 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
         .inTable('service')
         .onDelete('RESTRICT');
 
-      table.integer('car_model_id').unsigned().notNullable();
+      table.integer('car_model_id').unsigned();
       table
         .foreign('car_model_id')
         .references('id')
         .inTable('car_model')
         .onDelete('RESTRICT');
 
-      table.integer('car_type_id').unsigned().notNullable();
+      table.integer('car_type_id').unsigned();
       table
         .foreign('car_type_id')
         .references('id')
         .inTable('car_type')
         .onDelete('RESTRICT');
       table.string('note');
+      table.string('car_number').notNullable();
+
       table.integer('price').notNullable();
       table.dateTime('date_time').notNullable();
 

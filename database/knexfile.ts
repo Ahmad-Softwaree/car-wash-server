@@ -1,41 +1,22 @@
 import { Knex } from 'knex';
-import { configDotenv } from 'dotenv';
-configDotenv();
+import { config as loadEnv } from 'dotenv';
+import * as path from 'path';
+loadEnv({ path: path.resolve(__dirname, '../.env') });
 const development: Knex.Config = {
   client: 'pg',
   connection: {
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 'postgres',
-    database: 'raha_auto_spa_system',
+    host: process.env.DATABASE_HOST,
+    port: Number(process.env.DATABASE_PORT),
+    user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE_NAME,
   },
   seeds: {
     directory: './seeds',
   },
-
-  migrations: {
-    directory: './migrations',
-  },
-  debug: true, // Enable debugging
-};
-
-const production: Knex.Config = {
-  client: 'pg',
-  connection: {
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 'postgres',
-    database: 'raha_auto_spa_system',
-  },
-  seeds: {
-    directory: './seeds',
-  },
-
   migrations: {
     directory: './migrations',
   },
 };
 
-export { development, production };
+export { development };

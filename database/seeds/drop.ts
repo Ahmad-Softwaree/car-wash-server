@@ -1,6 +1,8 @@
-import { development } from '../knexfile';
 import db from '../config';
 import { Knex } from 'knex';
+import { config as loadEnv } from 'dotenv';
+import * as path from 'path';
+loadEnv({ path: path.resolve(__dirname, '../../.env') });
 
 async function dropAllTables() {
   const tables = await db.raw(

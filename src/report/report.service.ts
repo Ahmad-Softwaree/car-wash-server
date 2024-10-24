@@ -2916,8 +2916,7 @@ export class ReportService {
           'car_type.name as car_type_name',
           'color.name as color_name',
           'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
@@ -3078,8 +3077,7 @@ export class ReportService {
           'car_type.name as car_type_name',
           'color.name as color_name',
           'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
+          'customer.name as customer_name',
           'createdUser.username as created_by', // Alias for created_by user
           'updatedUser.username as updated_by', // Alias for updated_by user
         )
@@ -3100,10 +3098,12 @@ export class ReportService {
         .leftJoin('customer', 'reservation.customer_id', 'customer.id')
         .where(function () {
           this.whereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [`%${search}%`])
-            .orWhere('customer.first_name', 'ilike', `%${search}%`)
-            .orWhere('customer.last_name', 'ilike', `%${search}%`)
+            .orWhere('createdUser.username', 'ilike', `%${search}%`)
+            .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+            .orWhere('customer.name', 'ilike', `%${search}%`)
             .orWhere('service.name', 'ilike', `%${search}%`)
             .orWhere('color.name', 'ilike', `%${search}%`)
+            .orWhere('reservation.car_number', 'ilike', `%${search}%`)
             .orWhere('car_model.name', 'ilike', `%${search}%`)
             .orWhere('car_type.name', 'ilike', `%${search}%`);
         })
@@ -3138,6 +3138,12 @@ export class ReportService {
           if (search && search !== '') {
             this.where('createdUser.username', 'ilike', `%${search}%`)
               .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+              .orWhere('customer.name', 'ilike', `%${search}%`)
+              .orWhere('service.name', 'ilike', `%${search}%`)
+              .orWhere('color.name', 'ilike', `%${search}%`)
+              .orWhere('reservation.car_number', 'ilike', `%${search}%`)
+              .orWhere('car_model.name', 'ilike', `%${search}%`)
+              .orWhere('car_type.name', 'ilike', `%${search}%`)
               .orWhereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [
                 `%${search}%`,
               ]);
@@ -3165,85 +3171,85 @@ export class ReportService {
     info: ReservationReportInfo;
   }> {
     try {
-      const reservations: ReservationReportData[] = await this.knex<Reservation>(
-        'reservation',
-      )
-        .select(
-          'reservation.*',
-          'car_model.name as car_model_name',
-          'car_type.name as car_type_name',
-          'color.name as color_name',
-          'service.name as service_name',
-          'customer.first_name as customer_first_name',
-          'customer.last_name as customer_last_name',
-          'createdUser.username as created_by', // Alias for created_by user
-          'updatedUser.username as updated_by', // Alias for updated_by user
-        )
-        .leftJoin(
-          'user as createdUser',
-          'reservation.created_by',
-          'createdUser.id',
-        ) // Join for created_by
-        .leftJoin(
-          'user as updatedUser',
-          'reservation.updated_by',
-          'updatedUser.id',
-        ) // Join for updated_by
-        .leftJoin('car_model', 'reservation.car_model_id', 'car_model.id')
-        .leftJoin('car_type', 'reservation.car_type_id', 'car_type.id')
-        .leftJoin('color', 'reservation.color_id', 'color.id')
-        .leftJoin('service', 'reservation.service_id', 'service.id')
-        .leftJoin('customer', 'reservation.customer_id', 'customer.id')
-        .where('reservation.deleted', false)
-        .andWhere(function () {
-          if (from != '' && from && to != '' && to) {
-            const fromDate = timestampToDateString(Number(from));
-            const toDate = timestampToDateString(Number(to));
-            this.whereBetween('reservation.date_time', [fromDate, toDate]);
-          }
-        })
-        .andWhere(function () {
-          if (search && search !== '') {
-            this.whereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [
-              `%${search}%`,
-            ])
-              .orWhere('customer.first_name', 'ilike', `%${search}%`)
-              .orWhere('customer.last_name', 'ilike', `%${search}%`)
-              .orWhere('service.name', 'ilike', `%${search}%`)
-              .orWhere('color.name', 'ilike', `%${search}%`)
-              .orWhere('car_model.name', 'ilike', `%${search}%`)
-              .orWhere('car_type.name', 'ilike', `%${search}%`);
-          }
-        })
-        .andWhere(function () {
-          if (colorFilter != '' && colorFilter) {
-            this.where('color.id', colorFilter);
-          }
-        })
-        .andWhere(function () {
-          if (carModelFilter != '' && carModelFilter) {
-            this.where('car_model.id', carModelFilter);
-          }
-        })
-        .andWhere(function () {
-          if (carTypeFilter != '' && carTypeFilter) {
-            this.where('car_type.id', carTypeFilter);
-          }
-        })
-        .andWhere(function () {
-          if (serviceFilter != '' && serviceFilter) {
-            this.where('service.id', serviceFilter);
-          }
-        })
-        .andWhere(function () {
-          if (userFilter != '' && userFilter) {
-            this.where('createdUser.id', userFilter).orWhere(
-              'updatedUser.id',
-              userFilter,
-            );
-          }
-        })
-        .orderBy('id', 'desc');
+      const reservations: ReservationReportData[] =
+        await this.knex<Reservation>('reservation')
+          .select(
+            'reservation.*',
+            'car_model.name as car_model_name',
+            'car_type.name as car_type_name',
+            'color.name as color_name',
+            'service.name as service_name',
+            'customer.name as customer_name',
+            'createdUser.username as created_by', // Alias for created_by user
+            'updatedUser.username as updated_by', // Alias for updated_by user
+          )
+          .leftJoin(
+            'user as createdUser',
+            'reservation.created_by',
+            'createdUser.id',
+          ) // Join for created_by
+          .leftJoin(
+            'user as updatedUser',
+            'reservation.updated_by',
+            'updatedUser.id',
+          ) // Join for updated_by
+          .leftJoin('car_model', 'reservation.car_model_id', 'car_model.id')
+          .leftJoin('car_type', 'reservation.car_type_id', 'car_type.id')
+          .leftJoin('color', 'reservation.color_id', 'color.id')
+          .leftJoin('service', 'reservation.service_id', 'service.id')
+          .leftJoin('customer', 'reservation.customer_id', 'customer.id')
+          .where('reservation.deleted', false)
+          .andWhere(function () {
+            if (from != '' && from && to != '' && to) {
+              const fromDate = timestampToDateString(Number(from));
+              const toDate = timestampToDateString(Number(to));
+              this.whereBetween('reservation.date_time', [fromDate, toDate]);
+            }
+          })
+          .andWhere(function () {
+            if (search && search !== '') {
+              this.where('createdUser.username', 'ilike', `%${search}%`)
+                .orWhere('updatedUser.username', 'ilike', `%${search}%`)
+                .orWhere('customer.name', 'ilike', `%${search}%`)
+                .orWhere('service.name', 'ilike', `%${search}%`)
+                .orWhere('color.name', 'ilike', `%${search}%`)
+                .orWhere('reservation.car_number', 'ilike', `%${search}%`)
+                .orWhere('car_model.name', 'ilike', `%${search}%`)
+                .orWhere('car_type.name', 'ilike', `%${search}%`)
+                .orWhereRaw('CAST(reservation.id AS TEXT) ILIKE ?', [
+                  `%${search}%`,
+                ]);
+            }
+          })
+          .andWhere(function () {
+            if (colorFilter != '' && colorFilter) {
+              this.where('color.id', colorFilter);
+            }
+          })
+          .andWhere(function () {
+            if (carModelFilter != '' && carModelFilter) {
+              this.where('car_model.id', carModelFilter);
+            }
+          })
+          .andWhere(function () {
+            if (carTypeFilter != '' && carTypeFilter) {
+              this.where('car_type.id', carTypeFilter);
+            }
+          })
+          .andWhere(function () {
+            if (serviceFilter != '' && serviceFilter) {
+              this.where('service.id', serviceFilter);
+            }
+          })
+          .andWhere(function () {
+            if (userFilter != '' && userFilter) {
+              this.where('createdUser.id', userFilter).orWhere(
+                'updatedUser.id',
+                userFilter,
+              );
+            }
+          })
+          .orderBy('id', 'desc');
 
       let info = !search
         ? await this.getReservationInformation(
