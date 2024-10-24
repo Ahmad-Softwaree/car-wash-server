@@ -507,6 +507,23 @@ export class ItemService {
       throw new Error(error.message);
     }
   }
+
+  async deleteImage(id: Id): Promise<Item> {
+    try {
+      const result: Item[] = await this.knex<Item>('item')
+        .where('item.id', id)
+        .andWhere('item.deleted', false)
+        .update({ image_name: '', image_url: '' })
+        .returning('*');
+
+      if (result.length === 0) {
+        throw new NotFoundException(`ئەم داتایە بوونی نیە`);
+      }
+      return result[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
   async changeQuantity(
     id: Id,
     type: 'increase' | 'decrease',

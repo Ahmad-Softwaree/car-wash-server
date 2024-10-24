@@ -79,6 +79,27 @@ export class ServiceService {
       throw new Error(error.message);
     }
   }
+
+  async getAllMobile(from: From, to: To): Promise<Service[]> {
+    try {
+      const service: Service[] = await this.knex
+        .table<Service>('service')
+        .where('deleted', false)
+        .andWhere(function () {
+          if (from != '' && from && to != '' && to) {
+            const fromDate = timestampToDateString(Number(from));
+            const toDate = timestampToDateString(Number(to));
+            this.whereBetween('created_at', [fromDate, toDate]);
+          }
+        })
+        .select('*')
+        .orderBy('id', 'desc');
+
+      return service;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
   async getSelect(): Promise<Service[]> {
     try {
       const service: Service[] = await this.knex

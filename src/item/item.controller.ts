@@ -284,6 +284,22 @@ export class ItemController {
   }
 
   @PartName([ENUMs.KOGA_PART as string])
+  @Put('delete_image/:id')
+  async deleteImage(
+    @Param('id', ParseIntPipe) id: Id,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<Response<Item>> {
+    try {
+      const item: Item = await this.itemService.deleteImage(id);
+      return res.status(HttpStatus.OK).json(item);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
+  @PartName([ENUMs.KOGA_PART as string])
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: Id,

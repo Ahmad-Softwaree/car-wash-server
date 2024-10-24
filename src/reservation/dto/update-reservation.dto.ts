@@ -43,6 +43,7 @@ export default class UpdateReservationDto {
 
   @IsNotEmpty({ message: 'نرخی پەیام پێویستە' })
   @IsString({ message: 'نرخی پەیام دەبێت تەواو بێت' })
+  @IsOptional()
   car_number: string;
 
   @IsNotEmpty({ message: 'کات و بەروار پێویستە' })

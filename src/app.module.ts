@@ -56,7 +56,6 @@ import { ConfigModule as MyConfigModule } from './config/config.module';
     UserModule,
     RoleModule,
     PartModule,
-
     UserPartModule,
     RolePartModule,
     ConfigModule,

@@ -62,6 +62,28 @@ export class ServiceController {
         .json({ error: error.message });
     }
   }
+
+  @PartName([ENUMs.SERVICES_PART as string])
+  @Get('/mobile')
+  async getAllMobile(
+    @Req() req: Request,
+    @Res() res: Response,
+
+    @Query('from') from: From,
+    @Query('to') to: To,
+  ): Promise<Response<Service[]>> {
+    try {
+      let services: Service[] = await this.serviceService.getAllMobile(
+        from,
+        to,
+      );
+      return res.status(HttpStatus.OK).json(services);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    }
+  }
   @PartName(['all'])
   @Get('/select')
   async getSelect(
