@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Config } from 'database/types';
+import { CompanyInfo, Config } from 'database/types';
 import { Knex } from 'knex';
-import { UpdateConfigDto } from './dto/update-config-dto';
+import { UpdateConfigDto } from './dto/update-configdto';
+import { CompanyDto } from './dto/update-company.dto';
+import { InsetCompanyImageDto } from './dto/insert-image.dto';
 
 @Injectable()
 export class ConfigService {
@@ -16,8 +18,20 @@ export class ConfigService {
       throw new Error(error.message);
     }
   }
+  async getCompanyData(): Promise<CompanyInfo> {
+    try {
+      const company_info: CompanyInfo = await this.knex<CompanyInfo>(
+        'company_info',
+      )
+        .select('*')
+        .first();
+      return company_info;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
 
-  async update<T>(key: string, body: UpdateConfigDto): Promise<Config> {
+  async update(key: string, body: UpdateConfigDto): Promise<Config> {
     try {
       const config: Config[] = await this.knex<Config>('config')
         .update({
@@ -26,6 +40,53 @@ export class ConfigService {
         .returning('*');
 
       return config[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async insertImage(body: InsetCompanyImageDto): Promise<CompanyInfo> {
+    try {
+      const company_info: CompanyInfo[] = await this.knex<CompanyInfo>(
+        'company_info',
+      )
+        .update({
+          image_name: body.image_name,
+          image_url: body.image_url,
+        })
+        .returning('*');
+
+      return company_info[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async deleteImage(): Promise<CompanyInfo> {
+    try {
+      const company_info: CompanyInfo[] = await this.knex<CompanyInfo>(
+        'company_info',
+      )
+        .update({
+          image_name: '',
+          image_url: '',
+        })
+        .returning('*');
+
+      return company_info[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+  async updateCompanyInfo(body: CompanyDto): Promise<CompanyInfo> {
+    try {
+      const company_info: CompanyInfo[] = await this.knex<CompanyInfo>(
+        'company_info',
+      )
+        .update(body)
+        .returning('*');
+
+      return company_info[0];
     } catch (error) {
       throw new Error(error.message);
     }

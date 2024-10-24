@@ -1,6 +1,6 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class UpdateConfigDto {
-  @IsNotEmpty({ message: 'Value is required' })
+  @IsNotEmpty({ message: 'داتا پیویستە' })
   value: any;
 }

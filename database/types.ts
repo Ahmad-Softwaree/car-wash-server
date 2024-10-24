@@ -272,3 +272,16 @@ export type Config = {
   created_at: Date | null;
   updated_at: Date | null;
 };
+export type CompanyInfo = {
+  id: number;
+  phone: string;
+  phone1: string;
+  name: string;
+  location: string;
+  description: string;
+  image_name: string;
+  image_url: string;
+  deleted: boolean;
+  created_at: Date | null;
+  updated_at: Date | null;
+};

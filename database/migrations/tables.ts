@@ -345,6 +345,18 @@ const up: (knex: Knex) => Promise<void> = function (knex) {
       table.float('initial_money').defaultTo(0);
       table.boolean('deleted').defaultTo(false);
       table.timestamps({ defaultToNow: true });
+    })
+    .createTable('company_info', (table) => {
+      table.increments('id').primary();
+      table.string('phone', 255).defaultTo('');
+      table.string('phone1', 255).defaultTo('');
+      table.string('name', 255).defaultTo('');
+      table.string('description', 255).defaultTo('');
+      table.string('location', 255).defaultTo('');
+      table.string('image_name').defaultTo('');
+      table.string('image_url').defaultTo('');
+      table.boolean('deleted').defaultTo(false);
+      table.timestamps({ defaultToNow: true });
     });
 };
 

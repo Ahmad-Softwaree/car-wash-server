@@ -104,6 +104,10 @@ export const parts = [
     name: 'باکئەپی ئاسایی',
     created_at: new Date(),
   },
+  {
+    name: 'زانیاری کۆمپانیا',
+    created_at: new Date(),
+  },
 ];
 
 const seed = async function (knex: Knex) {
